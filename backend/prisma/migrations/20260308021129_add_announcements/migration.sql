@@ -1,0 +1,28 @@
+-- CreateTable
+CREATE TABLE `Contract` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `fileName` VARCHAR(191) NOT NULL,
+    `filePath` VARCHAR(191) NOT NULL,
+    `status` ENUM('PENDING', 'UPLOADED', 'CONFIRMED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
+    `userId` INTEGER NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Announcement` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `title` VARCHAR(191) NOT NULL,
+    `content` VARCHAR(191) NOT NULL,
+    `type` ENUM('INFO', 'SUCCESS', 'WARNING', 'URGENT') NOT NULL DEFAULT 'INFO',
+    `isActive` BOOLEAN NOT NULL DEFAULT true,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `Contract` ADD CONSTRAINT `Contract_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
