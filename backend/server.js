@@ -107,3 +107,4 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+// Production CORS configured for Vercel
