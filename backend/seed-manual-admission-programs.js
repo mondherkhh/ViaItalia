@@ -3,9 +3,7 @@ const path = require('path');
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
-const DATA_DIR = path.join(__dirname, 'data');
-const BATCH_PATH = path.join(DATA_DIR, 'admission-source-map.json');
-const ACTIVE_MAP_PATH = path.join(DATA_DIR, 'admission-source-map.json');
+const DATA_PATH = path.join(__dirname, 'data', 'admission-source-map.json');
 
 function normalize(value) {
   return String(value || '')
@@ -24,90 +22,108 @@ function cityFor(university) {
   if (name.includes('trento')) return 'Trento';
   if (name.includes('ferrara')) return 'Ferrara';
   if (name.includes('bologna')) return 'Bologna';
+  if (name.includes('venezia')) return 'Venezia';
+  if (name.includes('firenze')) return 'Firenze';
+  if (name.includes('napoli')) return 'Napoli';
+  if (name.includes('padova')) return 'Padova';
+  if (name.includes('messina')) return 'Messina';
+  if (name.includes('verona')) return 'Verona';
+  if (name.includes('milano')) return 'Milano';
   return null;
 }
 
 function levelFor(programName) {
   const name = normalize(programName);
-  return name.includes('bachelor') || name.startsWith('b ') ? 'Bachelor' : 'Master';
+  if (
+    name.includes('bachelor') ||
+    name.includes('undergraduate') ||
+    name.startsWith('b ')
+  ) {
+    return 'Bachelor';
+  }
+  return 'Master';
 }
 
-function sourceEntryFor(entry, id) {
-  return {
-    programId: id,
-    manual: true,
-    university: entry.university,
-    programName: entry.programName,
-    programUrls: entry.programUrls || [],
-    admissionsUrls: entry.admissionsUrls || [],
-    feesUrls: entry.feesUrls || [],
-    verifiedAcademicYear: '2026/27',
-    sourceOnly: true,
-    doNotUseManualDates: true,
-    notes: 'Official source URLs only. Dates and fees must be extracted during sync; no manual dates or fees are stored.'
-  };
+function firstUrl(entry) {
+  return (
+    entry.sourceUrl ||
+    (Array.isArray(entry.admissionsUrls) && entry.admissionsUrls[0]) ||
+    (Array.isArray(entry.programUrls) && entry.programUrls[0]) ||
+    (Array.isArray(entry.feesUrls) && entry.feesUrls[0]) ||
+    null
+  );
 }
 
 async function main() {
-  const batch = JSON.parse(fs.readFileSync(BATCH_PATH, 'utf8'));
-  const activeMap = JSON.parse(fs.readFileSync(ACTIVE_MAP_PATH, 'utf8'));
-  if (!Array.isArray(activeMap)) throw new Error('admission-source-map.json must contain an array');
-  if (!Array.isArray(batch.entries)) throw new Error('Batch source map must contain entries[]');
+  if (!fs.existsSync(DATA_PATH)) {
+    throw new Error(`Data file not found: ${DATA_PATH}`);
+  }
 
-  const now = new Date();
+  const entries = JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'));
+  if (!Array.isArray(entries)) {
+    throw new Error('admission-source-map.json must contain a JSON array');
+  }
+
   let created = 0;
   let updated = 0;
-  let mapped = 0;
+  let skipped = 0;
 
-  for (const entry of batch.entries) {
-    const sourceUrl = (entry.admissionsUrls || [])[0] || (entry.programUrls || [])[0];
-    if (!sourceUrl) throw new Error(`No official URL for ${entry.university} / ${entry.programName}`);
+  console.log(`Found ${entries.length} admission source entries.`);
+
+  for (const entry of entries) {
+    const university = String(entry.university || '').trim();
+    const programName = String(entry.programName || '').trim();
+    const sourceUrl = firstUrl(entry);
+
+    if (!university || !programName || !sourceUrl) {
+      skipped += 1;
+      console.warn(`Skipped incomplete entry: ${university || 'unknown university'} — ${programName || 'unknown program'}`);
+      continue;
+    }
 
     const data = {
-      university: entry.university,
-      city: cityFor(entry.university),
-      programName: entry.programName,
-      level: levelFor(entry.programName),
+      university,
+      city: cityFor(university),
+      programName,
+      level: levelFor(programName),
       language: 'English',
-      field: entry.programName,
-      sourceName: `Official ${entry.university} admission source`,
+      field: programName,
+      sourceName: `Official ${university} admission source`,
       sourceUrl,
-      lastVerifiedAt: now,
+      lastVerifiedAt: new Date(),
       verificationStatus: 'NEEDS_REVIEW',
       confidence: 0
     };
 
     const existing = await prisma.universityProgram.findFirst({
-      where: { university: data.university, programName: data.programName }
+      where: { university, programName }
     });
 
-    const row = existing
-      ? await prisma.universityProgram.update({ where: { id: existing.id }, data })
-      : await prisma.universityProgram.create({ data });
-
-    if (existing) updated += 1; else created += 1;
-
-    const found = activeMap.find(item =>
-      normalize(item.university) === normalize(data.university) &&
-      normalize(item.programName) === normalize(data.programName)
-    );
-    const mappedEntry = sourceEntryFor(entry, row.id);
-    if (found) Object.assign(found, mappedEntry);
-    else activeMap.push(mappedEntry);
-    mapped += 1;
-
-    console.log(`${existing ? 'Updated' : 'Created'} #${row.id}: ${data.university} — ${data.programName}`);
+    if (existing) {
+      await prisma.universityProgram.update({
+        where: { id: existing.id },
+        data
+      });
+      updated += 1;
+      console.log(`Updated #${existing.id}: ${university} — ${programName}`);
+    } else {
+      const row = await prisma.universityProgram.create({ data });
+      created += 1;
+      console.log(`Created #${row.id}: ${university} — ${programName}`);
+    }
   }
 
-  const temp = `${ACTIVE_MAP_PATH}.tmp`;
-  fs.writeFileSync(temp, `${JSON.stringify(activeMap, null, 2)}\n`, 'utf8');
-  fs.renameSync(temp, ACTIVE_MAP_PATH);
-  console.log(JSON.stringify({ created, updated, mapped, batchEntries: batch.entries.length }, null, 2));
+  console.log(JSON.stringify({
+    sourceEntries: entries.length,
+    created,
+    updated,
+    skipped
+  }, null, 2));
 }
 
 main()
-  .catch(error => {
-    console.error(error);
+  .catch((error) => {
+    console.error('Manual admissions seed failed:', error);
     process.exitCode = 1;
   })
   .finally(async () => {
