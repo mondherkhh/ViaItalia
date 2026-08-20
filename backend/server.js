@@ -21,18 +21,43 @@ const dossierRoutes = require('./routes/dossierRoutes');
 
 const app = express();
 
-// CORS configuration
-const allowedOrigins = [
+/*
+ * Production CORS configuration
+ *
+ * The explicit middleware below handles OPTIONS requests before the routes
+ * and before the 404 handler. This prevents the browser preflight request
+ * from receiving a 404 response.
+ */
+const configuredOrigins = [
   process.env.CLIENT_URL,
   'https://via-italia-nine.vercel.app',
   'http://localhost:3000',
   'http://localhost:5000'
-].filter(Boolean );
+]
+  .filter(Boolean)
+  .map((origin) => origin.trim().replace(/\/$/, ''));
+
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+
+  const normalizedOrigin = origin.trim().replace(/\/$/, '');
+
+  // Allow the configured production/development origins.
+  if (configuredOrigins.includes(normalizedOrigin)) {
+    return true;
+  }
+
+  // Allow Vercel preview deployments as well.
+  if (/^https:\/\/.*\.vercel\.app$/i.test(normalizedOrigin)) {
+    return true;
+  }
+
+  return false;
+};
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow server-to-server requests and approved browser origins
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (isAllowedOrigin(origin)) {
       return callback(null, true);
     }
 
@@ -40,11 +65,51 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: [
+    'Origin',
+    'X-Requested-With',
+    'Content-Type',
+    'Accept',
+    'Authorization'
+  ],
+  optionsSuccessStatus: 204
 };
 
+// Explicitly answer every browser preflight request before any API route.
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  if (origin && isAllowedOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+
+  res.setHeader(
+    'Access-Control-Allow-Methods',
+    'GET,POST,PUT,PATCH,DELETE,OPTIONS'
+  );
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+  );
+
+  if (req.method === 'OPTIONS') {
+    if (origin && !isAllowedOrigin(origin)) {
+      return res.status(403).json({
+        success: false,
+        message: 'CORS origin not allowed'
+      });
+    }
+
+    return res.status(204).end();
+  }
+
+  next();
+});
+
+// Keep cors middleware for normal GET/POST/PUT/PATCH/DELETE responses.
 app.use(cors(corsOptions));
-app.options(/.*/, cors(corsOptions));
 
 // Request body parsers
 app.use(express.json({ limit: '50mb' }));
@@ -93,9 +158,10 @@ app.use((error, req, res, next) => {
 
   res.status(error.status || 500).json({
     success: false,
-    message: process.env.NODE_ENV === 'production'
-      ? 'Une erreur interne est survenue.'
-      : error.message
+    message:
+      process.env.NODE_ENV === 'production'
+        ? 'Une erreur interne est survenue.'
+        : error.message
   });
 });
 
@@ -107,4 +173,3 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
-// Production CORS configured for Vercel
