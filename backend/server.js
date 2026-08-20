@@ -21,18 +21,21 @@ const dossierRoutes = require('./routes/dossierRoutes');
 
 const app = express();
 
-// Global middleware
+// CORS configuration
 const allowedOrigins = [
   process.env.CLIENT_URL,
+  'https://via-italia-nine.vercel.app',
   'http://localhost:3000',
   'http://localhost:5000'
 ].filter(Boolean );
 
 const corsOptions = {
   origin: (origin, callback) => {
+    // Allow server-to-server requests and approved browser origins
     if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
+
     return callback(new Error(`CORS blocked origin: ${origin}`));
   },
   credentials: true,
@@ -41,14 +44,18 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
+// Request body parsers
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Health check
 app.get('/', (req, res) => {
-  res.json({ status: 'ok', service: 'ViaItalia API' });
+  res.json({
+    status: 'ok',
+    service: 'ViaItalia API'
+  });
 });
 
 // API routes
