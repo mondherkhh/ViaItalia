@@ -4,7 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 const DATA_DIR = path.join(__dirname, 'data');
-const BATCH_PATH = path.join(DATA_DIR, 'admission-source-map-batch-19.json');
+const BATCH_PATH = path.join(DATA_DIR, 'admission-source-map.json');
 const ACTIVE_MAP_PATH = path.join(DATA_DIR, 'admission-source-map.json');
 
 function normalize(value) {
