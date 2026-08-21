@@ -121,7 +121,7 @@ const FEE_PATTERNS = [
   /((?:€|EUR|euro)\s*[0-9]{1,3}(?:[ .][0-9]{3})*(?:[.,][0-9]{1,2})?|[0-9]{1,3}(?:[ .][0-9]{3})*(?:[.,][0-9]{1,2})?\s*(?:€|EUR|euro))[^.!?\n]{0,160}?(?:application|admission|registration|enrolment|pre[- ]?enrol|iscrizion|immatricol|candidatur|contributo di iscrizione|tassa di iscrizione|tassa di ammissione)/giu
 ];
 
-const MONEY_PATTERN = /(?:€|EUR|euro)\s*[0-9]{1,3}(?:[ .][0-9]{3})*(?:[.,][0-9]{1,2})?|[0-9]{1,3}(?:[ .][0-9]{3})*(?:[.,][0-9]{1,2})?\s*(?:€|EUR|euro)/giu;
+const MONEY_PATTERN = /(?:€|EUR|euros?)\s*[0-9]{1,3}(?:[ .][0-9]{3})*(?:[.,][0-9]{1,2})?|[0-9]{1,3}(?:[ .][0-9]{3})*(?:[.,][0-9]{1,2})?\s*(?:€|EUR|euros?)/giu;
 const ADDITIONAL_ENROLLMENT_FEE_PATTERN = /(?:additional|extra|supplementary)[^.!?\n]{0,100}?(?:enrol(?:l)?ment|registration|inscription)[^.!?\n]{0,100}?((?:€|EUR|euro)\s*[0-9]{1,3}(?:[ .][0-9]{3})*(?:[.,][0-9]{1,2})?|[0-9]{1,3}(?:[ .][0-9]{3})*(?:[.,][0-9]{1,2})?\s*(?:€|EUR|euro))/giu;
 const REGISTRATION_CONTEXT = /application fee|admission fee|application costs?|costs? of (?:the )?application|registration fee|enrolment fee|pre[- ]?enrolment fee|pre[- ]?application fee|tassa di iscrizione|tassa di ammissione|contributo di iscrizione|contributo amministrativo|contributo per l['’]ammissione(?: al concorso)?|quota di iscrizione|costo della domanda|diritti di segreteria|pagamento del contributo di ammissione|contributo per la domanda|application fee required/i;
 const NON_REGISTRATION_CONTEXT = /ricerca|ricercator|research|researcher|assegno di ricerca|research grant|progetto|project|starter[- ]?kit|cofinanziamento|finanziamento|funding|borsa|scholarship|stipend|fellowship|laboratorio|annualità|phd|dottorato|gross|companies contribution|tassa regionale|imposta di bollo|prima rata|seconda rata|contribuzione universitaria|annual amount|english test|language test|test di inglese|test linguistico|prova di lingua|lingua inglese|language proficiency|english language|esame di inglese|esame linguistico|test d[’']inglese|prova d[’']inglese|contributo di partecipazione al test|contributo per il test|pagamento del contributo.*(?:test|esame|prova)|test.*(?:contributo|pagamento|50)|esame.*(?:contributo|pagamento)|pagopa.*(?:test|esame|prova)|(?:test|esame|prova).{0,100}pagopa|esoner\w*|esenti|handicap|riserva\s+del\s+posto|riservazione\s+del\s+posto|prenotazione\s+del\s+posto|conferma\s+del\s+posto|atto\s+della\s+riserva|pagamento\s+.*(?:riserva|posto)|versamento\s+.*(?:riserva|posto)|caparra|deposito\s+.*posto|quota\s+di\s+riserva|contributo\s+per\s+la\s+riserva|diritti\s+di\s+segreteria|foglio\s+di\s+congedo|congedo|trasferimento|passaggio\s+(?:da|ad|di)\s+altro\s+ateneo|altro\s+ateneo|ripresa\s+della\s+carriera|ripresa\s+carriera/i;
@@ -311,6 +311,11 @@ function isAdmissionDocument(document) {
   // not reject the whole page because a distant FAQ/navigation block mentions
   // employment, research, or another administrative context.
   if (!document.isPdf && document.isSeedAdmissionPage && isCourseAdmissionsPage(url)) return true;
+  // A URL explicitly mapped as the programme/admission source is authoritative
+  // when its own text contains an admission-window label such as
+  // "Application deadline". Do not let unrelated words like "employment" in
+  // the course description erase that direct official deadline.
+  if (!document.isPdf && (document.isSeedAdmissionPage || document.isProgramPage) && ADMISSION_WINDOW_WORDS.test(text)) return true;
   if (NON_PROGRAMME_DEADLINE_CONTEXT.test(`${url} ${text}`)) return false;
 
   if (document.isPdf) {
@@ -845,10 +850,30 @@ function extractAdditionalEnrollmentFees(text) {
 function extractRegistrationFees(text) {
   const source = String(text || '');
   const fees = [];
+  // Tuition/annual-tax amounts must never become an application fee merely
+  // because the same page also contains the words "application fee".
+  const NON_APPLICATION_FEE_CONTEXT = /annual\s+(?:university\s+)?tax(?:es)?|annual\s+tuition|tuition\s+fee|tuition|university\s+tax(?:es)?|contribuzione\s+universitaria|tasse\s+universitarie|quota\s+annuale/i;
+  // English official calls commonly use: "application fee of 30 euros".
+  // Keep this explicit application-fee proof ahead of broader context filters.
+  const explicitApplicationFeePatterns = [
+    // English: "application fee of 30 euros" / "application fee: 30 EUR".
+    /application\s+fee[^.!?\n]{0,100}?([0-9]{1,3}(?:[.,][0-9]{1,2})?)\s*(?:€|EUR|euros?)/giu,
+    // English portals also use: "Application fee €20 one-time".
+    /application\s+fee[^.!?\n]{0,40}?((?:€|EUR|euros?)\s*[0-9]{1,3}(?:[.,][0-9]{1,2})?)/giu
+  ];
+  for (const explicitApplicationFeePattern of explicitApplicationFeePatterns) {
+    let explicitFeeMatch;
+    while ((explicitFeeMatch = explicitApplicationFeePattern.exec(source)) !== null) {
+      const fee = normaliseFee(explicitFeeMatch[1]);
+      if (fee) fees.push(fee);
+      if (explicitFeeMatch.index === explicitApplicationFeePattern.lastIndex) explicitApplicationFeePattern.lastIndex += 1;
+    }
+  }
   let match;
   while ((match = MONEY_PATTERN.exec(source)) !== null) {
     const context = source.slice(Math.max(0, match.index - 220), Math.min(source.length, match.index + match[0].length + 220));
     if (NON_REGISTRATION_CONTEXT.test(context)) continue;
+    if (NON_APPLICATION_FEE_CONTEXT.test(context)) continue;
     if (NON_PROGRAMME_DEADLINE_CONTEXT.test(context)) continue;
     const explicitCycle = context.match(/(?:a\.?\s*y\.?|a\.?\s*a\.?|academic\s+year|anno\s+accademico)[^0-9]{0,24}20\d{2}\s*[\/-]\s*(?:20)?\d{2}/i);
     if (explicitCycle && !hasTargetAcademicYear(context, { isPdf: true })) continue;
@@ -876,6 +901,7 @@ function extractRegistrationFees(text) {
 }
 function extractValues(text) {
   const source = String(text || '');
+  const admissionRanges = [];
   const tableOpeningDates = [];
   const tableClosingDates = [];
   // Official Italian admission calendars often place the admission label
@@ -895,6 +921,64 @@ function extractValues(text) {
   }
   const sharedRangeDatePart = `(?:${MONTH_NAME_TOKEN}\\s*,?\\s*\\d{1,2}(?:st|nd|rd|th|er)?|\\d{1,2}\\s+${MONTH_NAME_TOKEN})`;
   const sharedRangePattern = new RegExp(`(${sharedRangeDatePart})\\s*(?:-|–|—|to|until|du|au|al|dal)\\s*(${sharedRangeDatePart})[, ]+(20\\d{2})`, 'giu');
+  // Support full date ranges where each endpoint carries its own year,
+  // for example: "10 November 2025 - 17 December 2025". This is common
+  // in official intake schedules and must not be reduced to the closing date.
+  const fullDateRangePattern = new RegExp(`(${DATE_TOKEN})\\s*(?:-|–|—|to|until|du|au|al|dal)\\s*(${DATE_TOKEN})`, 'giu');
+  const fullRangeOpeningDates = [];
+  const fullRangeClosingDates = [];
+
+  // Some official pages put the timezone/time between the endpoints:
+  // `From November 24, 2025 (00:01 am CET) + To December 22, 2025
+  // (11:59 pm CET)`. Capture the two dates while ignoring the time metadata.
+  const fromToTimedRangePattern = new RegExp(`\\bfrom\\s+(${DATE_TOKEN})(?:\\s*\\([^)]{0,120}\\))?\\s*(?:\\+\\s*)?to\\s+(${DATE_TOKEN})`, 'giu');
+  let fromToTimedRangeMatch;
+  while ((fromToTimedRangeMatch = fromToTimedRangePattern.exec(source)) !== null) {
+    const context = source.slice(Math.max(0, fromToTimedRangeMatch.index - 180), Math.min(source.length, fromToTimedRangeMatch.index + fromToTimedRangeMatch[0].length + 180));
+    const opening = parseDate(fromToTimedRangeMatch[1]);
+    const closing = parseDate(fromToTimedRangeMatch[2]);
+    if (opening && closing && opening <= closing && (ADMISSION_RANGE_LABEL.test(context) || hasStrictAdmissionContext(context))) {
+      fullRangeOpeningDates.push(opening);
+      fullRangeClosingDates.push(closing);
+    }
+    if (fromToTimedRangeMatch.index === fromToTimedRangePattern.lastIndex) fromToTimedRangePattern.lastIndex += 1;
+  }
+
+  // Fallback for CMS output that removes the whitespace before `To` or
+  // inserts timezone metadata in a different form. The bounded gap prevents
+  // crossing into the next Call while accepting the official Timeframe block.
+  const looseFromToPattern = new RegExp(`\\bfrom\\s+(${DATE_TOKEN})[\\s\\S]{0,100}?\\bto\\s+(${DATE_TOKEN})`, 'giu');
+  let looseFromToMatch;
+  while ((looseFromToMatch = looseFromToPattern.exec(source)) !== null) {
+    const context = source.slice(Math.max(0, looseFromToMatch.index - 180), Math.min(source.length, looseFromToMatch.index + looseFromToMatch[0].length + 180));
+    const opening = parseDate(looseFromToMatch[1]);
+    const closing = parseDate(looseFromToMatch[2]);
+    if (opening && closing && opening <= closing && (ADMISSION_RANGE_LABEL.test(context) || /timeframe|application\\s+calls?/i.test(context))) {
+      fullRangeOpeningDates.push(opening);
+      fullRangeClosingDates.push(closing);
+    }
+    if (looseFromToMatch.index === looseFromToPattern.lastIndex) looseFromToPattern.lastIndex += 1;
+  }
+
+  let fullRangeMatch;
+  while ((fullRangeMatch = fullDateRangePattern.exec(source)) !== null) {
+    const before = source.slice(Math.max(0, fullRangeMatch.index - 220), fullRangeMatch.index);
+    const after = source.slice(fullRangeMatch.index + fullRangeMatch[0].length, Math.min(source.length, fullRangeMatch.index + fullRangeMatch[0].length + 120));
+    const context = `${before} ${fullRangeMatch[0]} ${after}`;
+    const lowerBefore = before.toLowerCase();
+    const lastApplicationLabel = Math.max(lowerBefore.lastIndexOf('online application'), lowerBefore.lastIndexOf('application period'), lowerBefore.lastIndexOf('application'));
+    const lastResultsLabel = Math.max(lowerBefore.lastIndexOf('results publishing'), lowerBefore.lastIndexOf('publication of results'), lowerBefore.lastIndexOf('result date'));
+    if (lastResultsLabel > lastApplicationLabel) continue;
+    if (!hasStrictAdmissionContext(context) && !ADMISSION_RANGE_LABEL.test(context)) continue;
+    const opening = parseDate(fullRangeMatch[1]);
+    const closing = parseDate(fullRangeMatch[2]);
+    if (opening && closing && opening <= closing) {
+      fullRangeOpeningDates.push(opening);
+      fullRangeClosingDates.push(closing);
+    }
+    if (fullRangeMatch.index === fullDateRangePattern.lastIndex) fullDateRangePattern.lastIndex += 1;
+  }
+
   const sharedOpeningDates = [];
   const sharedClosingDates = [];
   let sharedRangeMatch;
@@ -918,16 +1002,35 @@ function extractValues(text) {
     }
     if (sharedRangeMatch.index === sharedRangePattern.lastIndex) sharedRangePattern.lastIndex += 1;
   }
-  const rangeOpeningValues = new Set([...tableOpeningDates, ...sharedOpeningDates]);
-  const rangeClosingValues = new Set([...tableClosingDates, ...sharedClosingDates]);
+  const rangeOpeningValues = new Set([...tableOpeningDates, ...sharedOpeningDates, ...fullRangeOpeningDates]);
+  const rangeClosingValues = new Set([...tableClosingDates, ...sharedClosingDates, ...fullRangeClosingDates]);
   let openingDates = unique(allMatches(source, OPENING_PATTERNS))
     .map(parseDate)
     .filter(Boolean)
     .filter(value => dateHasOpeningContext(source, value));
+  // Full endpoint ranges are already validated against admission context above;
+  // include both endpoints in the evidence candidates used by pairing and saving.
+  openingDates.push(...fullRangeOpeningDates);
   let closingDates = unique(allMatches(source, CLOSING_PATTERNS))
     .map(parseDate)
     .filter(Boolean)
     .filter(value => dateHasClosingContext(source, value));
+  closingDates.push(...fullRangeClosingDates);
+
+  // Some official course portals render the deadline as a labelled field:
+  // "Application deadline 14 Sep 2026, 23:59:59". The time is intentionally
+  // ignored; the calendar date remains the authoritative admission deadline.
+  const labelledDeadlinePattern = new RegExp(`(?:application|admission)\\s+deadline\\s*[:\\-]?\\s*(${DATE_TOKEN})`, 'giu');
+  let labelledDeadlineMatch;
+  while ((labelledDeadlineMatch = labelledDeadlinePattern.exec(source)) !== null) {
+    const deadline = parseDate(labelledDeadlineMatch[1]);
+    if (deadline) {
+      closingDates.push(deadline);
+      rangeClosingValues.add(deadline);
+    }
+    if (labelledDeadlineMatch.index === labelledDeadlinePattern.lastIndex) labelledDeadlinePattern.lastIndex += 1;
+  }
+
   const tableAdmissionDates = extractAdmissionRowDates(source);
   if (tableAdmissionDates.length) {
     // Dans un bando structuré, la ligne « Iscrizione al concorso... » est prioritaire.
@@ -1066,9 +1169,61 @@ const context = source.slice(Math.max(0, dateMatch.index - 85), dateMatch.index 
 
     openingDates.push(...sharedOpeningDates, ...tableOpeningDates);
   closingDates.push(...sharedClosingDates, ...tableClosingDates);
+
+  // Preserve the original range and its nearby Call/group label. Sorting two
+  // independent date lists is ambiguous when Padova has unlimited and limited
+  // calls whose windows overlap. This generic pass works for all official pages
+  // using a date range and never invents a value: both dates must parse from the
+  // same source span.
+  const admissionRangePattern = new RegExp(`(${DATE_TOKEN})\\s*(?:-|–|—|to|until|du|au)\\s*(${DATE_TOKEN})(?:[,\\s]+(20\\d{2}))?`, 'giu');
+  let admissionRangeMatch;
+  while ((admissionRangeMatch = admissionRangePattern.exec(source)) !== null) {
+    const year = admissionRangeMatch[3] || null;
+    const opening = parseDate(admissionRangeMatch[1], year);
+    const closing = parseDate(admissionRangeMatch[2], year);
+    if (!opening || !closing || opening > closing) continue;
+    const before = source.slice(Math.max(0, admissionRangeMatch.index - 220), admissionRangeMatch.index);
+    const context = `${before} ${admissionRangeMatch[0]}`;
+    if (!hasStrictAdmissionContext(context) && !ADMISSION_WINDOW_WORDS.test(context)) continue;
+    const call = context.match(/call\\s+(one|two|three|four|five|six|1st|2nd|3rd|4th|5th|6th)/i);
+    const group = context.match(/(unlimited|limited)\\s+(?:number\\s+of\\s+)?places?/i);
+    admissionRanges.push({
+      openingDate: opening,
+      closingDate: closing,
+      label: call ? `Call ${call[1]}` : '',
+      group: group ? group[1].toLowerCase() : '',
+      sourceIndex: admissionRangeMatch.index
+    });
+    if (admissionRangeMatch.index === admissionRangePattern.lastIndex) admissionRangePattern.lastIndex += 1;
+  }
+  // Named Call blocks are parsed separately because Padova writes the year
+  // once at the end of a range and repeats Call One in two different groups.
+  const callBlockPattern = /(?:^|[\n.])\s*[*_]{0,3}(call|session|round)\s+(one|two|three|four|five|six|1st|2nd|3rd|4th|5th|6th)[*_]{0,3}[^\n]{0,220}?[:\-]([\s\S]*?)(?=(?:[\n.]\s*[*_]{0,3}(?:call|session|round)\s+(?:one|two|three|four|five|six|1st|2nd|3rd|4th|5th|6th)\b)|$)/giu;
+  let callBlockMatch;
+  while ((callBlockMatch = callBlockPattern.exec(source)) !== null) {
+    const block = callBlockMatch[3] || '';
+    const blockRangePattern = new RegExp(`(${MONTH_NAME_TOKEN}\\s+\\d{1,2}(?:st|nd|rd|th|er)?(?:,\\s*20\\d{2})?)\\s*(?:-|–|—|to|until)\\s*(${MONTH_NAME_TOKEN}\\s+\\d{1,2}(?:st|nd|rd|th|er)?(?:,\\s*20\\d{2})?)`, 'iu');
+    const blockRange = block.match(blockRangePattern);
+    if (!blockRange) continue;
+    const closingYear = String(blockRange[2]).match(/20\\d{2}/)?.[0] || String(block).match(/20\\d{2}/)?.[0] || null;
+    const opening = parseDate(blockRange[1], closingYear);
+    const closing = parseDate(blockRange[2], closingYear);
+    if (!opening || !closing || opening > closing) continue;
+    const surrounding = source.slice(Math.max(0, callBlockMatch.index - 260), callBlockMatch.index + callBlockMatch[0].length);
+    const group = surrounding.match(/(unlimited|limited)\\s+(?:number\\s+of\\s+)?places?/i);
+    admissionRanges.push({
+      openingDate: opening,
+      closingDate: closing,
+      label: `Call ${callBlockMatch[2]}`,
+      group: group ? group[1].toLowerCase() : '',
+      sourceIndex: callBlockMatch.index
+    });
+  }
+  const uniqueRanges = admissionRanges.filter((range, index, list) => list.findIndex(item => item.openingDate === range.openingDate && item.closingDate === range.closingDate) === index);
   return {
     openingDates: unique(openingDates),
     closingDates: unique(closingDates),
+    admissionRanges: uniqueRanges,
     fees: unique(fees),
     additionalEnrollmentFees,
     tuition: unique(tuition)
@@ -1234,20 +1389,38 @@ function chooseDates(openingCandidates, closingCandidates) {
   return { openingDate: null, closingDate: null };
 }
 
-// Pair each admission opening with the first still-unused closing date after it.
-// This preserves multiple official rounds instead of reducing the page to one
-// independent opening/closing pair. Result-publication dates are harmless here:
-// the true application closing date always occurs first in each chronological gap.
-function pairAdmissionWindows(openingCandidates, closingCandidates) {
+// Pair each admission opening with the closing date belonging to its
+// chronological window. When another opening follows, use the latest unused
+// closing before that next opening. For the final window, use the latest
+// remaining closing: official pages such as Messina may also publish an
+// external Universitaly deadline earlier than the actual final Call closing.
+function pairAdmissionWindows(openingCandidates, closingCandidates, rangeCandidates = []) {
+  const directRanges = (Array.isArray(rangeCandidates) ? rangeCandidates : [])
+    .filter(range => range?.openingDate && range?.closingDate)
+    .filter(range => isInTargetAcademicCycle(range.openingDate) && isInTargetAcademicCycle(range.closingDate))
+    .sort((a, b) => Number(a.sourceIndex || 0) - Number(b.sourceIndex || 0));
+  if (directRanges.length) {
+    return directRanges.filter((range, index, list) => list.findIndex(item => item.openingDate === range.openingDate && item.closingDate === range.closingDate) === index)
+      .map(range => ({ openingDate: range.openingDate, closingDate: range.closingDate, label: range.group ? `${range.label} (${range.group})` : range.label }));
+  }
   const openings = unique(openingCandidates).filter(value => isInTargetAcademicCycle(value)).sort();
   const closings = unique(closingCandidates).filter(value => isInTargetAcademicCycle(value)).sort();
   const usedClosingIndexes = new Set();
   const pairs = [];
-  for (const openingDate of openings) {
-    const closingIndex = closings.findIndex((closingDate, index) => !usedClosingIndexes.has(index) && closingDate > openingDate);
-    if (closingIndex < 0) continue;
-    usedClosingIndexes.add(closingIndex);
-    pairs.push({ openingDate, closingDate: closings[closingIndex], label: '' });
+  for (let openingIndex = 0; openingIndex < openings.length; openingIndex += 1) {
+    const openingDate = openings[openingIndex];
+    const nextOpening = openings[openingIndex + 1] || null;
+    const eligible = closings
+      .map((closingDate, index) => ({ closingDate, index }))
+      .filter(({ closingDate, index }) => !usedClosingIndexes.has(index) && closingDate > openingDate);
+    // Calls can overlap: a later call may open before the previous call closes.
+    // For non-final calls the earliest unused closing is the safest chronological
+    // match; for the final call, prefer the latest closing to avoid selecting an
+    // external portal deadline published before the official final-call close.
+    let selected = nextOpening ? eligible[0] : eligible[eligible.length - 1];
+    if (!selected) continue;
+    usedClosingIndexes.add(selected.index);
+    pairs.push({ openingDate, closingDate: selected.closingDate, label: '' });
   }
   return pairs;
 }
@@ -1310,7 +1483,7 @@ function buildValueEvidence(document, field, value, programName, universityName)
   const directOfficialWindowText = Boolean(
     matchedText
       && (document.isSeedAdmissionPage || document.isProgramPage)
-      && ADMISSION_WINDOW_WORDS.test(matchedText)
+      && (ADMISSION_WINDOW_WORDS.test(matchedText) || /\bcall\b|\bround\b|\bdegree\s+programmes?\b|\bplaces?\b/i.test(matchedText))
   );
   const hasValue = field === 'fee'
     ? Boolean(matchedText && /(?:€|EUR|euro)/i.test(matchedText) && REGISTRATION_CONTEXT.test(matchedText) && !NON_REGISTRATION_CONTEXT.test(matchedText))
@@ -1347,6 +1520,7 @@ function buildEvidence(document, values, programName, universityName) {
     isProgramPage: Boolean(document.isProgramPage),
     openingDates: values.openingDates,
     closingDates: values.closingDates,
+    admissionRanges: values.admissionRanges || [],
     fees: values.fees,
     tuition: values.tuition,
     openingText: openingEvidence[0]?.matchedText || null,
@@ -1466,10 +1640,14 @@ async function enrichProgram({ programName, universityName, source, programUrl }
         continue;
       }
       const isSeedAdmissionPage = (source?.admissionsUrls || []).some(seed => String(seed).replace(/\/$/, '') === String(url).replace(/\/$/, ''));
+      // Do not replace a complete official HTML page with a shorter browser-rendered
+      // snapshot merely because it is an admissions page. Several Italian university
+      // pages expose the full schedule in server-rendered HTML while the browser
+      // snapshot omits sections, which caused valid dates and fees to disappear.
       const needsBrowser = text.length < Number(process.env.ADMISSIONS_PLAYWRIGHT_MIN_TEXT || 500)
         || $('a[href]').length === 0
         || /enable javascript|javascript required|loading\.\.\.|please wait/i.test(text)
-        || (isSeedAdmissionPage && isCourseAdmissionsPage(url));
+        || (isSeedAdmissionPage && isCourseAdmissionsPage(url) && text.length < 3000);
       if (needsBrowser) {
         const rendered = await renderDynamicPage(url).catch(error => {
           debug.errors.push({ stage: 'playwright', url, error: error.message });
@@ -1785,7 +1963,7 @@ const currentOpening = value => isInTargetAcademicCycle(value);
     const parsed = parseDate(value);
     if (!parsed) return null;
     if (typeof parsed === 'string') {
-      const match = parsed.match(/^(\\d{4}-\\d{2}-\\d{2})/);
+      const match = parsed.match(/^(\d{4}-\d{2}-\d{2})/);
       return match ? match[1] : null;
     }
     if (parsed instanceof Date && !Number.isNaN(parsed.getTime())) {
@@ -1808,6 +1986,9 @@ const currentOpening = value => isInTargetAcademicCycle(value);
     const raw = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (!raw || !document?.text) return null;
     const [, year, month, day] = raw;
+    const sourceText = /<[a-z][\s\S]*>/i.test(String(document.text))
+      ? normaliseText(String(document.text))
+      : String(document.text);
     const monthNumber = Number(month);
     const dayNumber = Number(day);
     const englishMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -1824,9 +2005,9 @@ const currentOpening = value => isInTargetAcademicCycle(value);
       `(?:${monthNames})\\s+${dayNumber}(?:st|nd|rd|th|er)?(?:,)?\\s+${year}`
     ];
     const pattern = new RegExp(variants.join('|'), 'i');
-    const match = pattern.exec(String(document.text));
+    const match = pattern.exec(sourceText);
     if (!match) return null;
-    return String(document.text).slice(Math.max(0, match.index - 180), Math.min(String(document.text).length, match.index + match[0].length + 220)).trim();
+    return sourceText.slice(Math.max(0, match.index - 180), Math.min(sourceText.length, match.index + match[0].length + 220)).trim();
   };
 
   const hasExactDateEvidence = (item, field, value) => {
@@ -1840,7 +2021,14 @@ const currentOpening = value => isInTargetAcademicCycle(value);
       fees: [],
       tuition: []
     });
-    return Boolean(snippet);
+    if (snippet) return true;
+    // Some official pages write the year once at the end of a range. Re-run
+    // the generalized extractor on the exact document text so a verified
+    // source-map window is not dropped merely because its date has no isolated
+    // textual occurrence.
+    const reparsed = extractValues(document.text);
+    const parsedValues = field === 'opening' ? reparsed.openingDates : reparsed.closingDates;
+    return parsedValues.includes(value);
   };
   const validOpenings = unique(evidence.flatMap(item => (item.openingDates || [])
     .filter(value => verifiedWindows.length ? verifiedOpeningDates.has(value) : currentOpening(value))
@@ -1871,6 +2059,16 @@ const currentOpening = value => isInTargetAcademicCycle(value);
       break;
     }
   }
+  // A direct official course page may expose only a closing deadline (for
+  // example a fixed-quota call with an opening date defined by the portal).
+  // Preserve that verified closing value instead of turning the whole result
+  // into "À vérifier".
+  if (!selectedOpening && !selectedClosing && validClosings.length) {
+    selectedClosing = validClosings[0];
+  }
+  if (!selectedOpening && !selectedClosing && validOpenings.length) {
+    selectedOpening = validOpenings[0];
+  }
   const candidateFor = (field, value) => {
     if (!value) return null;
     const list = [...evidence].sort((a, b) => Number(Boolean(a.isPdf)) - Number(Boolean(b.isPdf)));
@@ -1879,12 +2077,17 @@ const currentOpening = value => isInTargetAcademicCycle(value);
       const proof = (proofs || []).find(candidate => String(candidate.value) === String(value) && candidate.matchedText);
       if (proof) return { item, proof };
       const document = documents.find(candidate => String(candidate.url) === String(item.url));
-      const snippet = document ? (dateSnippetFromDocument(document, value) || makeSnippet(document.text, {
+      let snippet = document ? (dateSnippetFromDocument(document, value) || makeSnippet(document.text, {
         openingDates: field === 'opening' ? [value] : [],
         closingDates: field === 'closing' ? [value] : [],
         fees: [],
         tuition: []
       })) : null;
+      if (!snippet && document) {
+        const reparsed = extractValues(document.text);
+        const parsedValues = field === 'opening' ? reparsed.openingDates : reparsed.closingDates;
+        if (parsedValues.includes(value)) snippet = String(document.text).slice(0, 520).trim();
+      }
       if (snippet) {
         return { item, proof: { field, value: String(value), url: item.url, matchedText: snippet, pageNumber: null, isPdf: Boolean(document?.isPdf), confidence: 1 } };
       }
@@ -1892,7 +2095,11 @@ const currentOpening = value => isInTargetAcademicCycle(value);
     return null;
   };
 
-  const windowPairs = pairAdmissionWindows(validOpenings, validClosings);
+  const verifiedRangePairs = evidence
+    .flatMap(item => item.admissionRanges || [])
+    .filter(range => currentOpening(range.openingDate) && currentClosing(range.closingDate)
+      && validOpenings.includes(range.openingDate) && validClosings.includes(range.closingDate));
+  const windowPairs = pairAdmissionWindows(validOpenings, validClosings, verifiedRangePairs);
   const dates = { openingDate: selectedOpening, closingDate: selectedClosing };
   const fee = firstFeeProof?.proof?.value || null;
   const firstAdditionalEnrollmentFee = additionalEnrollmentFeeEvidence[0] || null;
@@ -2023,5 +2230,6 @@ module.exports = {
   parseDate,
   extractValues,
   chooseDates,
+  pairAdmissionWindows,
   isCurrentOrFutureDate
 };
