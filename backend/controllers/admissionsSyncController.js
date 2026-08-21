@@ -146,6 +146,31 @@ function evidenceContainsValue(text, value, field) {
         ...(monthNumberValue === 12 ? ['décembre', 'decembre'] : [])
       ].filter(Boolean);
       const monthName = monthNames.en[monthNumberValue - 1];
+
+        // Le texte officiel peut être italien/français et ne pas être recopié
+        // dans openingText/closingText. On valide alors directement la date
+        // dans le document original, y compris lorsque l'année n'apparaît
+        // qu'une seule fois à la fin d'une plage (« 7 aprile - 4 giugno 2026 »).
+        const monthDateForms = monthNamesForDate.flatMap(name => [
+          `${dayNumber} ${name} ${year}`,
+          `${paddedDay} ${name} ${year}`,
+          `${name} ${dayNumber} ${year}`,
+          `${name} ${paddedDay} ${year}`,
+          `${dayNumber} ${name}, ${year}`,
+          `${name} ${dayNumber}, ${year}`
+        ]);
+        if (monthDateForms.some(form => source.includes(form))) return true;
+        const anyLocalDate = `[a-zà-ÿ]+\\s+\\d{1,2}(?:st|nd|rd|th|er)?`;
+        const localOpeningRange = new RegExp(
+          `(?:${monthNamesForDate.join('|')})\\s+${dayNumber}(?:st|nd|rd|th|er)?\\s*(?:-|–|—|to|until|du|au|al|dal)\\s*${anyLocalDate}[,\\s]+${year}`,
+          'i'
+        );
+        const localClosingRange = new RegExp(
+          `${anyLocalDate}\\s*(?:-|–|—|to|until|du|au|al|dal)\\s*(?:${monthNamesForDate.join('|')})\\s+${dayNumber}(?:st|nd|rd|th|er)?[,\\s]+${year}`,
+          'i'
+        );
+        if (localOpeningRange.test(source) || localClosingRange.test(source)) return true;
+
       if (monthName) {
         // Pages officielles utilisent parfois 2nd March 2026, March 2nd, 2026,
         // des virgules ou des espaces insécables. On normalise uniquement la
@@ -254,9 +279,15 @@ function evidenceFor(enrichment, field, value) {
       : field === 'closing'
         ? item.closingDates
         : item.fees;
-
-    return Array.isArray(values)
+    const listed = Array.isArray(values)
       && values.some(candidate => String(candidate) === String(value));
+    if (listed) return true;
+
+    // Fallback document-level validation: some parser paths retain the exact
+    // page text but omit the per-field candidate arrays. We may still use that
+    // official text as evidence, but only after validating the expected value
+    // against the original snippet; no date or URL is fabricated.
+    return Boolean(item.text && evidenceContainsValue(item.text, value, field));
   });
 
   if (!document) return null;
@@ -279,7 +310,8 @@ function evidenceFor(enrichment, field, value) {
           || document.feeEvidence?.find(item => String(item?.value) === String(value))?.matchedText
         : document.tuitionText
           || document.tuitionEvidence?.find(item => String(item?.value) === String(value))?.matchedText;
-  const matchedText = fieldText || document.matchedText || document.textSnippet || null;
+  const matchedText = fieldText || document.matchedText || document.textSnippet
+    || (document.text && evidenceContainsValue(document.text, value, field) ? document.text : null);
 
   return safeEvidence({
     field,
