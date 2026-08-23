@@ -4,7 +4,6 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 const DATA_DIR = path.join(__dirname, 'data');
-const BATCH_PATH = path.join(DATA_DIR, 'admission-source-map-batch-19.json');
 const ACTIVE_MAP_PATH = path.join(DATA_DIR, 'admission-source-map.json');
 
 function normalize(value) {
@@ -49,17 +48,22 @@ function sourceEntryFor(entry, id) {
 }
 
 async function main() {
-  const batch = JSON.parse(fs.readFileSync(BATCH_PATH, 'utf8'));
-  const activeMap = JSON.parse(fs.readFileSync(ACTIVE_MAP_PATH, 'utf8'));
-  if (!Array.isArray(activeMap)) throw new Error('admission-source-map.json must contain an array');
-  if (!Array.isArray(batch.entries)) throw new Error('Batch source map must contain entries[]');
+  if (!fs.existsSync(ACTIVE_MAP_PATH)) {
+    throw new Error(`Missing source map: ${ACTIVE_MAP_PATH}`);
+  }
 
+  const activeMap = JSON.parse(fs.readFileSync(ACTIVE_MAP_PATH, 'utf8'));
+  if (!Array.isArray(activeMap)) {
+    throw new Error('admission-source-map.json must contain an array');
+  }
+
+  const entries = activeMap.map(entry => ({ ...entry }));
   const now = new Date();
   let created = 0;
   let updated = 0;
   let mapped = 0;
 
-  for (const entry of batch.entries) {
+  for (const entry of entries) {
     const sourceUrl = (entry.admissionsUrls || [])[0] || (entry.programUrls || [])[0];
     if (!sourceUrl) throw new Error(`No official URL for ${entry.university} / ${entry.programName}`);
 
@@ -87,22 +91,17 @@ async function main() {
 
     if (existing) updated += 1; else created += 1;
 
-    const found = activeMap.find(item =>
-      normalize(item.university) === normalize(data.university) &&
-      normalize(item.programName) === normalize(data.programName)
-    );
     const mappedEntry = sourceEntryFor(entry, row.id);
-    if (found) Object.assign(found, mappedEntry);
-    else activeMap.push(mappedEntry);
+    Object.assign(entry, mappedEntry);
     mapped += 1;
 
     console.log(`${existing ? 'Updated' : 'Created'} #${row.id}: ${data.university} — ${data.programName}`);
   }
 
   const temp = `${ACTIVE_MAP_PATH}.tmp`;
-  fs.writeFileSync(temp, `${JSON.stringify(activeMap, null, 2)}\n`, 'utf8');
+  fs.writeFileSync(temp, `${JSON.stringify(entries, null, 2)}\n`, 'utf8');
   fs.renameSync(temp, ACTIVE_MAP_PATH);
-  console.log(JSON.stringify({ created, updated, mapped, batchEntries: batch.entries.length }, null, 2));
+  console.log(JSON.stringify({ created, updated, mapped, mapEntries: entries.length }, null, 2));
 }
 
 main()
