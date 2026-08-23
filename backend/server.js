@@ -21,19 +21,41 @@ const dossierRoutes = require('./routes/dossierRoutes');
 
 const app = express();
 
-// Global middleware
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+// Allowed frontend origins
+const allowedOrigins = [
+  'https://via-italia-nine.vercel.app',
+  'https://via-italia.vercel.app',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+];
+
+const corsOptions = {
+  origin(origin, callback ) {
+    // Allow requests without Origin, for example server-to-server requests
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS origin not allowed: ${origin}`));
+  },
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: false
-}));
+  credentials: false,
+  optionsSuccessStatus: 204,
+};
+
+// Global middleware
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Health check
 app.get('/', (req, res) => {
-  res.json({ status: 'ok', service: 'ViaItalia API' });
+  res.json({
+    status: 'ok',
+    service: 'ViaItalia API',
+  });
 });
 
 // API routes
@@ -57,7 +79,7 @@ app.use('/api/dossiers', dossierRoutes);
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: `Route introuvable: ${req.method} ${req.originalUrl}`
+    message: `Route introuvable: ${req.method} ${req.originalUrl}`,
   });
 });
 
@@ -71,9 +93,10 @@ app.use((error, req, res, next) => {
 
   res.status(error.status || 500).json({
     success: false,
-    message: process.env.NODE_ENV === 'production'
-      ? 'Une erreur interne est survenue.'
-      : error.message
+    message:
+      process.env.NODE_ENV === 'production'
+        ? 'Une erreur interne est survenue.'
+        : error.message,
   });
 });
 
