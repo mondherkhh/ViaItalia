@@ -17,7 +17,8 @@ const NormalPageContent = styled.main`
   z-index: 1;
   width: 100%;
   min-height: 100vh;
-  overflow: hidden;
+  /* لا ننشئ scroll-container لأن ذلك يقطع position: sticky داخل How It Works. */
+  overflow: visible;
   background: var(--background);
   color: var(--text);
 
@@ -99,9 +100,8 @@ export default function Home() {
           <About />
         </Reveal>
 
-        <Reveal delay={100}>
-          <HowItWorks />
-        </Reveal>
+        {/* How It Works يحتاج ancestor غير متحوّل حتى يبقى sticky حتى نهاية البطاقات الأربع. */}
+        <HowItWorks />
 
         <Reveal delay={80}>
           <Universities />
