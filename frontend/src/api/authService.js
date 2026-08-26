@@ -45,6 +45,17 @@ const authService = {
     }
   },
 
+  // Grant or revoke client dashboard access
+  updateUserAccess: async (userId, isApproved) => {
+    try {
+      const response = await axiosInstance.patch(`/auth/users/${userId}/access`, { isApproved });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating user access:', error);
+      throw error;
+    }
+  },
+
   // Delete user
   deleteUser: async (userId) => {
     try {
