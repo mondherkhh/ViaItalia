@@ -296,7 +296,7 @@ export function HeroDetails() {
             <Button onClick={() => window.open("https://calendly.com/viaitaliaagency/30min", "_blank", "noopener,noreferrer")}>
               {t.button1}
             </Button>
-            <Button primary onClick={() => navigate("/study-form")}>
+            <Button primary onClick={() => navigate("/register")}>
               {t.button2 || (language === "fr" ? "Commencer votre candidature" : "Start your application")}
               <img src={arrow} alt="" />
             </Button>
