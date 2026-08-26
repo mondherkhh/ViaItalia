@@ -123,7 +123,7 @@ model Appointment {
   date      DateTime
   status    AppointmentStatus @default(PENDING)
   etat      AppointmentEtat   @default(PRESENTIEL)
-  slotId    Int? // Optional field to link to time slot
+  slotId    Int?
   user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
   createdAt DateTime          @default(now())
@@ -197,27 +197,29 @@ model Review {
 }
 
 model UniversityProgram {
-  id             Int       @id @default(autoincrement())
-  university     String
-  city           String?
-  programName    String
-  level          String?
-  language       String?
-  field          String
-  openingDate    DateTime?
-  closingDate    DateTime?
-  applicationFee String?
-  tuition        String?
-  sourceName     String
-  sourceUrl      String    @db.Text
-  lastVerifiedAt DateTime
+  id                           Int       @id @default(autoincrement())
+  university                   String
+  city                         String?
+  programName                  String
+  level                        String?
+  language                     String?
+  field                        String
+  openingDate                  DateTime?
+  closingDate                  DateTime?
+  applicationFee               String?
+  tuition                      String?
+  additionalEnrollmentFee      String?
+  sourceName                   String
+  sourceUrl                    String    @db.Text
+  lastVerifiedAt               DateTime
 
-  openingEvidence    Json?
-  closingEvidence    Json?
-  tuitionEvidence    Json?
-  feeEvidence        Json?
-  verificationStatus String @default("NEEDS_REVIEW")
-  confidence         Float?
+  openingEvidence              Json?
+  closingEvidence              Json?
+  tuitionEvidence              Json?
+  feeEvidence                  Json?
+  additionalEnrollmentFeeEvidence Json?
+  verificationStatus           String    @default("NEEDS_REVIEW")
+  confidence                   Float?
 
   admissionWindows AdmissionWindow[]
 
@@ -232,7 +234,7 @@ model UniversityProgram {
 }
 
 model AdmissionWindow {
-  id                  Int      @id @default(autoincrement())
+  id                  Int               @id @default(autoincrement())
   universityProgram   UniversityProgram @relation(fields: [universityProgramId], references: [id], onDelete: Cascade)
   universityProgramId Int
   label               String?
@@ -242,14 +244,14 @@ model AdmissionWindow {
   closingDate         DateTime?
   applicationFee      String?
   sourceName          String
-  sourceUrl           String   @db.Text
+  sourceUrl           String            @db.Text
   openingEvidence     Json?
   closingEvidence     Json?
   feeEvidence         Json?
-  verificationStatus  String   @default("NEEDS_REVIEW")
+  verificationStatus  String            @default("NEEDS_REVIEW")
   confidence          Float?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
 
   @@index([universityProgramId])
   @@index([openingDate])
@@ -260,11 +262,11 @@ model AdmissionWindow {
 model Message {
   id        Int      @id @default(autoincrement())
   content   String
-  sender    String // USER or ADMIN
-  fileName  String? // Optional file name
-  filePath  String? // Optional file path
-  fileType  String? // Optional file type (pdf, doc, image, etc.)
-  fileSize  Int? // Optional file size in bytes
+  sender    String
+  fileName  String?
+  filePath  String?
+  fileType  String?
+  fileSize  Int?
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
   createdAt DateTime @default(now())
@@ -291,14 +293,14 @@ model Contract {
 }
 
 model Announcement {
-  id        Int              @id @default(autoincrement())
-  title     String
-  content   String
-  type      AnnouncementType @default(INFO)
-  isActive  Boolean          @default(true)
-  link      String?
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  id                Int                @id @default(autoincrement())
+  title             String
+  content           String
+  type              AnnouncementType   @default(INFO)
+  isActive          Boolean            @default(true)
+  link              String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   userAnnouncements UserAnnouncement[]
 }
@@ -322,13 +324,13 @@ model StudyInItalyForm {
   phoneNumber      String
   email            String
   city             String
-  passportStatus   String // "Oui" | "Non" | "En cours"
-  currentLevel     String // "Baccalauréat Obtenu" | "Baccalauréat en cours" | "Licence Obtenu" | "Licence en cours" | "Master Obtenu" | "Master en cours"
-  desiredLevel     String // "Licence" | "Master" | "2ème Master"
-  studyLanguage    String // "Italien" | "Anglais"
+  passportStatus   String
+  currentLevel     String
+  desiredLevel     String
+  studyLanguage    String
   desiredSpecialty String
   age              Int
-  selectedPack     String // "Pack Essentiel" | "Pack Avancé" | "Pack Premium"
+  selectedPack     String
   submissionDate   DateTime @default(now())
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
