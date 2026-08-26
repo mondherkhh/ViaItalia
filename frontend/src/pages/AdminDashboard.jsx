@@ -216,10 +216,6 @@ const HeaderLeft = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
-
-  @media (max-width: 768px) {
-    padding-left: 3.1rem;
-  }
 `;
 
 const HeaderRight = styled.div`
@@ -403,74 +399,35 @@ const MobileOverlay = styled.div`
   }
 `;
 
-const MobileSideToggle = styled.button`
+const BottomNav = styled.div`
   display: none;
 
   @media (max-width: 768px) {
-    display: inline-flex;
+    display: flex;
+    justify-content: space-around;
     align-items: center;
-    justify-content: center;
-    position: fixed;
-    left: 0.75rem;
-    top: 0.85rem;
-    transform: none;
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    background: #138a5b;
-    color: #ffffff;
-    border: 1px solid #69e6b0;
-    box-shadow: 0 8px 24px rgba(19, 138, 91, 0.42);
-    z-index: 1001;
-    cursor: pointer;
-  }
-
-  body.theme-light & {
-    background: #ffffff;
-    color: #111827;
-    border-color: #dbe4ea;
-  }
-
-  svg { width: 21px; height: 21px; }
-`;
-
-const BottomNav = styled.nav`
-  display: none;
-
-  @media (max-width: 768px) {
-    display: ${props => props.$isOpen ? 'flex' : 'none'};
-    flex-direction: column;
-    align-items: stretch;
-    position: fixed;
-    top: 4.35rem;
-    left: 0.75rem;
-    transform: none;
-    width: min(230px, 78vw);
-    max-height: calc(100vh - 5rem);
-    overflow-y: auto;
-    background: rgba(28, 28, 35, 0.97);
+    background: rgba(28, 28, 35, 0.95);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-left: none;
-    border-radius: 0 16px 16px 0;
-    padding: 0.65rem 0.45rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.5rem 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     z-index: 1000;
   }
 
   body.theme-light & {
-    background: rgba(255, 255, 255, 0.97);
-    border-color: #dbe4ea;
+    background: rgba(255, 255, 255, 0.94);
+    border-top-color: #dbe4ea;
   }
 `;
 
 const BottomNavItem = styled.div`
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 0.7rem 0.75rem;
-  border-radius: 8px;
+  padding: 0.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
   color: rgba(255, 255, 255, 0.7);
@@ -479,25 +436,27 @@ const BottomNavItem = styled.div`
   
   &:hover {
     color: var(--green);
-    transform: translateX(2px);
+    transform: translateY(-2px);
   }
   
   &.active {
     color: var(--green);
-    background: rgba(19, 138, 91, 0.12);
-    .icon { transform: scale(1.1); }
+    
+    .icon {
+      transform: scale(1.1);
+    }
   }
   
   .icon {
     font-size: 1.2rem;
     width: 1.2rem;
     height: 1.2rem;
-    flex-shrink: 0;
+    margin-bottom: 0.2rem;
     transition: all 0.3s ease;
   }
   
   span {
-    font-size: 0.78rem;
+    font-size: 0.7rem;
     font-weight: 500;
   }
 `;
@@ -1614,6 +1573,26 @@ function AdminDashboard() {
     }
   };
 
+  // Grant or revoke client dashboard access
+  const handleUserAccess = async (targetUser) => {
+    if (user.role !== 'ADMIN') {
+      alert('Accès refusé.');
+      return;
+    }
+
+    const nextAccess = targetUser.isApproved !== true;
+    try {
+      const response = await authService.updateUserAccess(targetUser.id, nextAccess);
+      if (response.success) {
+        const updatedUser = response.user || { ...targetUser, isApproved: nextAccess };
+        setAllUsers((current) => current.map((item) => item.id === targetUser.id ? updatedUser : item));
+        setUsers((current) => current.map((item) => item.id === targetUser.id ? updatedUser : item));
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Erreur lors de la mise à jour de l’accès.');
+    }
+  };
+
   // Delete user function
   const handleDeleteUser = async (userId, userName) => {
     // Only ADMIN can delete users
@@ -2441,6 +2420,7 @@ const menuItems = [
                           <th className="text-left p-4">Email</th>
                           <th className="text-left p-4">Rôle</th>
                           <th className="text-left p-4">Date d'inscription</th>
+                          <th className="text-left p-4">Accès dashboard</th>
                           <th className="text-left p-4">Actions</th>
                         </tr>
                       </thead>
@@ -2460,6 +2440,16 @@ const menuItems = [
                             </td>
                             <td className="p-4">
                               {new Date(user.createdAt).toLocaleDateString('fr-FR')}
+                            </td>
+                            <td className="p-4">
+                              {user.role === 'USER' && (
+                                <button
+                                  onClick={() => handleUserAccess(user)}
+                                  className={`px-3 py-1 ${user.isApproved ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'} text-white text-xs rounded-lg transition-colors duration-200`}
+                                >
+                                  {user.isApproved ? 'Retirer accès' : 'Donner accès'}
+                                </button>
+                              )}
                             </td>
                             <td className="p-4">
                               {user.role === 'USER' && (
@@ -2495,6 +2485,7 @@ const menuItems = [
                     <th className="text-left p-4">Email</th>
                     <th className="text-left p-4">Rôle</th>
                     <th className="text-left p-4">Date d'inscription</th>
+                    <th className="text-left p-4">Accès dashboard</th>
                     <th className="text-left p-4">Actions</th>
                   </tr>
                 </thead>
@@ -2514,6 +2505,16 @@ const menuItems = [
                       </td>
                       <td className="p-4">
                         {new Date(user.createdAt).toLocaleDateString('fr-FR')}
+                      </td>
+                      <td className="p-4">
+                        {user.role === 'USER' && (
+                          <button
+                            onClick={() => handleUserAccess(user)}
+                            className={`px-3 py-1 ${user.isApproved ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'} text-white text-xs rounded-lg transition-colors duration-200 mr-2`}
+                          >
+                            {user.isApproved ? 'Retirer accès' : 'Donner accès'}
+                          </button>
+                        )}
                       </td>
                       <td className="p-4">
                         {user.role === 'USER' && (
@@ -2727,7 +2728,8 @@ const menuItems = [
                         <th className="text-left p-4">Date</th>
                         <th className="text-left p-4">Statut</th>
                         <th className="text-left p-4">Mode</th>
-                        <th className="text-left p-4">Actions</th>
+                        <th className="text-left p-4">Accès dashboard</th>
+                    <th className="text-left p-4">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2884,7 +2886,8 @@ const menuItems = [
                       <th className="text-left p-4">Fichier</th>
                       <th className="text-left p-4">Statut</th>
                       <th className="text-left p-4">Date</th>
-                      <th className="text-left p-4">Actions</th>
+                      <th className="text-left p-4">Accès dashboard</th>
+                    <th className="text-left p-4">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3319,6 +3322,7 @@ const menuItems = [
                     <th className="text-left p-4">Reste</th>
                     <th className="text-left p-4">Statut</th>
                     <th className="text-left p-4">Date</th>
+                    <th className="text-left p-4">Accès dashboard</th>
                     <th className="text-left p-4">Actions</th>
                   </tr>
                 </thead>
@@ -3813,16 +3817,13 @@ const menuItems = [
         </ContentArea>
       </MainContent>
       
-      {/* Side navigation - Mobile Only */}
-      <MobileSideToggle onClick={toggleMobileSidebar} aria-label={sidebarOpen ? "Fermer le menu" : "Ouvrir le menu"}>
-        {sidebarOpen ? <FiX aria-hidden="true" /> : <FiMenu aria-hidden="true" />}
-      </MobileSideToggle>
-      <BottomNav $isOpen={sidebarOpen}>
-        {menuItems.map((item) => (
+      {/* Bottom Navigation - Mobile Only */}
+      <BottomNav>
+        {menuItems.map((item, index) => (
           <BottomNavItem
             key={item.id}
             className={activeMenu === item.id ? "active" : ""}
-            onClick={() => handleMobileMenuClick(item.id)}
+            onClick={() => setActiveMenu(item.id)}
           >
             <item.icon className="icon" aria-hidden="true" focusable="false" />
             <span>{item.text}</span>
