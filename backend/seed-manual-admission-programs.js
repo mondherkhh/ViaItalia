@@ -22,7 +22,13 @@ function cityFor(university) {
   if (name.includes('vergata') || name.includes('roma')) return 'Roma';
   if (name.includes('trento')) return 'Trento';
   if (name.includes('ferrara')) return 'Ferrara';
+  if (name.includes('firenze')) return 'Firenze';
+  if (name.includes('messina')) return 'Messina';
+  if (name.includes('napoli')) return 'Napoli';
+  if (name.includes('padova')) return 'Padova';
   if (name.includes('bologna')) return 'Bologna';
+  if (name.includes('venezia')) return 'Venezia';
+  if (name.includes('verona')) return 'Verona';
   return null;
 }
 
@@ -31,81 +37,76 @@ function levelFor(programName) {
   return name.includes('bachelor') || name.startsWith('b ') ? 'Bachelor' : 'Master';
 }
 
-function sourceEntryFor(entry, id) {
-  return {
-    programId: id,
-    manual: true,
-    university: entry.university,
-    programName: entry.programName,
-    programUrls: entry.programUrls || [],
-    admissionsUrls: entry.admissionsUrls || [],
-    feesUrls: entry.feesUrls || [],
-    verifiedAcademicYear: '2026/27',
-    sourceOnly: true,
-    doNotUseManualDates: true,
-    notes: 'Official source URLs only. Dates and fees must be extracted during sync; no manual dates or fees are stored.'
-  };
+function sourceUrlFor(entry) {
+  return (entry.admissionsUrls || [])[0] || (entry.programUrls || [])[0] || null;
 }
 
 async function main() {
   if (!fs.existsSync(ACTIVE_MAP_PATH)) {
-    throw new Error(`Missing source map: ${ACTIVE_MAP_PATH}`);
+    throw new Error(`Missing data file: ${ACTIVE_MAP_PATH}`);
   }
 
-  const activeMap = JSON.parse(fs.readFileSync(ACTIVE_MAP_PATH, 'utf8'));
-  if (!Array.isArray(activeMap)) {
+  const entries = JSON.parse(fs.readFileSync(ACTIVE_MAP_PATH, 'utf8'));
+  if (!Array.isArray(entries)) {
     throw new Error('admission-source-map.json must contain an array');
   }
 
-  const entries = activeMap.map(entry => ({ ...entry }));
   const now = new Date();
   let created = 0;
   let updated = 0;
-  let mapped = 0;
 
   for (const entry of entries) {
-    const sourceUrl = (entry.admissionsUrls || [])[0] || (entry.programUrls || [])[0];
-    if (!sourceUrl) throw new Error(`No official URL for ${entry.university} / ${entry.programName}`);
+    if (!entry.university || !entry.programName) {
+      console.warn('Skipped incomplete entry:', entry);
+      continue;
+    }
 
+    const sourceUrl = sourceUrlFor(entry);
     const data = {
       university: entry.university,
       city: cityFor(entry.university),
       programName: entry.programName,
       level: levelFor(entry.programName),
-      language: 'English',
-      field: entry.programName,
-      sourceName: `Official ${entry.university} admission source`,
+      language: entry.language || 'English',
+      field: entry.field || entry.programName,
+      sourceName: entry.sourceName || `Official ${entry.university} admission source`,
       sourceUrl,
       lastVerifiedAt: now,
-      verificationStatus: 'NEEDS_REVIEW',
-      confidence: 0
+      verificationStatus: entry.verificationStatus || 'NEEDS_REVIEW',
+      confidence: entry.confidence ?? 0,
     };
 
     const existing = await prisma.universityProgram.findFirst({
-      where: { university: data.university, programName: data.programName }
+      where: {
+        university: data.university,
+        programName: data.programName,
+      },
     });
 
-    const row = existing
-      ? await prisma.universityProgram.update({ where: { id: existing.id }, data })
-      : await prisma.universityProgram.create({ data });
-
-    if (existing) updated += 1; else created += 1;
-
-    const mappedEntry = sourceEntryFor(entry, row.id);
-    Object.assign(entry, mappedEntry);
-    mapped += 1;
-
-    console.log(`${existing ? 'Updated' : 'Created'} #${row.id}: ${data.university} — ${data.programName}`);
+    if (existing) {
+      await prisma.universityProgram.update({
+        where: { id: existing.id },
+        data,
+      });
+      updated += 1;
+      console.log(`Updated #${existing.id}: ${data.university} — ${data.programName}`);
+    } else {
+      const row = await prisma.universityProgram.create({ data });
+      created += 1;
+      console.log(`Created #${row.id}: ${data.university} — ${data.programName}`);
+    }
   }
 
-  const temp = `${ACTIVE_MAP_PATH}.tmp`;
-  fs.writeFileSync(temp, `${JSON.stringify(entries, null, 2)}\n`, 'utf8');
-  fs.renameSync(temp, ACTIVE_MAP_PATH);
-  console.log(JSON.stringify({ created, updated, mapped, mapEntries: entries.length }, null, 2));
+  console.log(JSON.stringify({
+    created,
+    updated,
+    mapEntries: entries.length,
+    note: 'This script upserts map entries and does not delete existing database records.',
+  }, null, 2));
 }
 
 main()
-  .catch(error => {
+  .catch((error) => {
     console.error(error);
     process.exitCode = 1;
   })
