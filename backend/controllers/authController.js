@@ -9,6 +9,7 @@ function publicUser(user) {
     lastName: user.lastName,
     email: user.email,
     role: user.role,
+    isApproved: user.role === 'ADMIN' || user.isApproved === true,
     passport: user.passport,
     address: user.address,
     phoneNumber: user.phoneNumber,
@@ -36,7 +37,6 @@ async function createUserDossier(user) {
     });
     console.log('Dossier créé automatiquement:', dossier.id, 'pour user:', user.id);
   } catch (error) {
-    // La création du dossier ne doit pas empêcher la création du compte.
     console.error('Erreur création dossier automatique:', error.message);
   }
 }
@@ -54,60 +54,31 @@ const register = async (req, res) => {
     const image = req.body?.image || null;
 
     if (!firstName || !lastName || !email || !password || !passport || !address || !phoneNumber) {
-      return res.status(400).json({
-        success: false,
-        message: 'Tous les champs obligatoires doivent être remplis.'
-      });
+      return res.status(400).json({ success: false, message: 'Tous les champs obligatoires doivent être remplis.' });
     }
-
-    if (!validEmail(email)) {
-      return res.status(400).json({ success: false, message: 'Adresse email invalide.' });
-    }
-
+    if (!validEmail(email)) return res.status(400).json({ success: false, message: 'Adresse email invalide.' });
     if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: 'Le mot de passe doit contenir au moins 6 caractères.'
-      });
+      return res.status(400).json({ success: false, message: 'Le mot de passe doit contenir au moins 6 caractères.' });
     }
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: 'Un utilisateur avec cette adresse email existe déjà.'
-      });
-    }
+    if (existingUser) return res.status(409).json({ success: false, message: 'Un utilisateur avec cette adresse email existe déjà.' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: {
-        firstName,
-        lastName,
-        email,
-        password: hashedPassword,
-        passport,
-        address,
-        phoneNumber,
-        image,
-        role: 'USER'
-      }
+      data: { firstName, lastName, email, password: hashedPassword, passport, address, phoneNumber, image, role: 'USER', isApproved: false }
     });
 
     await createUserDossier(user);
-
     return res.status(201).json({
       success: true,
-      message: 'Utilisateur créé avec succès.',
+      message: 'Compte créé. Remplissez le formulaire puis attendez la validation de l’administrateur.',
       user: publicUser(user),
       userId: user.id
     });
   } catch (error) {
     console.error('Register error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la création du compte.'
-    });
+    return res.status(500).json({ success: false, message: 'Erreur lors de la création du compte.' });
   }
 };
 
@@ -116,61 +87,30 @@ const login = async (req, res) => {
   try {
     const email = normaliseEmail(req.body?.email);
     const password = String(req.body?.password || '');
-
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email et mot de passe sont obligatoires.'
-      });
-    }
-
-    if (!validEmail(email)) {
-      return res.status(400).json({ success: false, message: 'Adresse email invalide.' });
-    }
+    if (!email || !password) return res.status(400).json({ success: false, message: 'Email et mot de passe sont obligatoires.' });
+    if (!validEmail(email)) return res.status(400).json({ success: false, message: 'Adresse email invalide.' });
 
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Email ou mot de passe incorrect.'
-      });
-    }
+    if (!user) return res.status(401).json({ success: false, message: 'Email ou mot de passe incorrect.' });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({
+    if (!isMatch) return res.status(401).json({ success: false, message: 'Email ou mot de passe incorrect.' });
+
+    if (user.role === 'USER' && user.isApproved !== true) {
+      return res.status(403).json({
         success: false,
-        message: 'Email ou mot de passe incorrect.'
+        code: 'ACCOUNT_PENDING_APPROVAL',
+        message: 'Votre compte est en attente de validation par l’administrateur. Remplissez le formulaire de demande puis attendez l’activation de votre accès.'
       });
     }
 
-    if (!process.env.JWT_SECRET) {
-      console.error('JWT_SECRET est absent du fichier .env');
-      return res.status(500).json({
-        success: false,
-        message: 'Configuration serveur incomplète.'
-      });
-    }
+    if (!process.env.JWT_SECRET) return res.status(500).json({ success: false, message: 'Configuration serveur incomplète.' });
 
-    const token = jwt.sign(
-      { userId: user.id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' }
-    );
-
-    return res.status(200).json({
-      success: true,
-      token,
-      user: publicUser(user),
-      userId: user.id,
-      role: user.role
-    });
+    const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    return res.status(200).json({ success: true, token, user: publicUser(user), userId: user.id, role: user.role });
   } catch (error) {
     console.error('Login error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Erreur interne lors de la connexion.'
-    });
+    return res.status(500).json({ success: false, message: 'Erreur interne lors de la connexion.' });
   }
 };
 
@@ -178,24 +118,36 @@ const login = async (req, res) => {
 const getAllUsers = async (req, res) => {
   try {
     const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        role: true,
-        createdAt: true
-      },
+      select: { id: true, firstName: true, lastName: true, email: true, role: true, isApproved: true, createdAt: true },
       orderBy: { createdAt: 'desc' }
     });
-
     return res.status(200).json({ success: true, data: users });
   } catch (error) {
     console.error('Get users error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la récupération des utilisateurs.'
+    return res.status(500).json({ success: false, message: 'Erreur lors de la récupération des utilisateurs.' });
+  }
+};
+
+// PATCH /api/auth/users/:id/access — ADMIN uniquement
+const updateUserAccess = async (req, res) => {
+  try {
+    const id = Number.parseInt(req.params.id, 10);
+    const isApproved = req.body?.isApproved === true;
+    if (!Number.isInteger(id)) return res.status(400).json({ success: false, message: 'ID utilisateur invalide.' });
+
+    const targetUser = await prisma.user.findUnique({ where: { id } });
+    if (!targetUser) return res.status(404).json({ success: false, message: 'Utilisateur non trouvé.' });
+    if (targetUser.role === 'ADMIN') return res.status(400).json({ success: false, message: 'Le compte administrateur ne nécessite pas cette validation.' });
+
+    const updatedUser = await prisma.user.update({ where: { id }, data: { isApproved } });
+    return res.status(200).json({
+      success: true,
+      message: isApproved ? 'Accès dashboard accordé.' : 'Accès dashboard retiré.',
+      user: publicUser(updatedUser)
     });
+  } catch (error) {
+    console.error('Update user access error:', error);
+    return res.status(500).json({ success: false, message: 'Erreur lors de la mise à jour de l’accès.' });
   }
 };
 
@@ -203,39 +155,21 @@ const getAllUsers = async (req, res) => {
 const deleteUser = async (req, res) => {
   try {
     const id = Number.parseInt(req.params.id, 10);
-    if (!Number.isInteger(id)) {
-      return res.status(400).json({ success: false, message: 'ID utilisateur invalide.' });
-    }
-
+    if (!Number.isInteger(id)) return res.status(400).json({ success: false, message: 'ID utilisateur invalide.' });
     const user = await prisma.user.findUnique({ where: { id } });
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'Utilisateur non trouvé.' });
-    }
-
+    if (!user) return res.status(404).json({ success: false, message: 'Utilisateur non trouvé.' });
     await prisma.user.delete({ where: { id } });
-    return res.status(200).json({
-      success: true,
-      message: 'Utilisateur et données associées supprimés avec succès.'
-    });
+    return res.status(200).json({ success: true, message: 'Utilisateur et données associées supprimés avec succès.' });
   } catch (error) {
     console.error('Delete user error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la suppression de l’utilisateur.'
-    });
+    return res.status(500).json({ success: false, message: 'Erreur lors de la suppression de l’utilisateur.' });
   }
 };
 
 // POST /api/auth/users — ADMIN uniquement
 const createUser = async (req, res) => {
   try {
-    if (req.user?.role !== 'ADMIN') {
-      return res.status(403).json({
-        success: false,
-        message: 'Accès refusé. Seul un administrateur peut créer des utilisateurs.'
-      });
-    }
-
+    if (req.user?.role !== 'ADMIN') return res.status(403).json({ success: false, message: 'Accès refusé. Seul un administrateur peut créer des utilisateurs.' });
     const firstName = String(req.body?.firstName || '').trim();
     const lastName = String(req.body?.lastName || '').trim();
     const email = normaliseEmail(req.body?.email);
@@ -246,61 +180,18 @@ const createUser = async (req, res) => {
     const image = req.body?.image || null;
     const role = req.body?.role === 'ADMIN' ? 'ADMIN' : 'USER';
 
-    if (!firstName || !lastName || !email || !password || !passport || !address || !phoneNumber) {
-      return res.status(400).json({
-        success: false,
-        message: 'Tous les champs obligatoires doivent être remplis.'
-      });
-    }
-
-    if (!validEmail(email)) {
-      return res.status(400).json({ success: false, message: 'Adresse email invalide.' });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: 'Le mot de passe doit contenir au moins 6 caractères.'
-      });
-    }
-
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: 'Un utilisateur avec cette adresse email existe déjà.'
-      });
-    }
+    if (!firstName || !lastName || !email || !password || !passport || !address || !phoneNumber) return res.status(400).json({ success: false, message: 'Tous les champs obligatoires doivent être remplis.' });
+    if (!validEmail(email)) return res.status(400).json({ success: false, message: 'Adresse email invalide.' });
+    if (password.length < 6) return res.status(400).json({ success: false, message: 'Le mot de passe doit contenir au moins 6 caractères.' });
+    if (await prisma.user.findUnique({ where: { email } })) return res.status(409).json({ success: false, message: 'Un utilisateur avec cette adresse email existe déjà.' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await prisma.user.create({
-      data: {
-        firstName,
-        lastName,
-        email,
-        password: hashedPassword,
-        passport,
-        address,
-        phoneNumber,
-        image,
-        role
-      }
-    });
-
+    const user = await prisma.user.create({ data: { firstName, lastName, email, password: hashedPassword, passport, address, phoneNumber, image, role, isApproved: role === 'ADMIN' } });
     await createUserDossier(user);
-
-    return res.status(201).json({
-      success: true,
-      message: 'Utilisateur créé avec succès.',
-      user: publicUser(user),
-      userId: user.id
-    });
+    return res.status(201).json({ success: true, message: 'Utilisateur créé avec succès.', user: publicUser(user), userId: user.id });
   } catch (error) {
     console.error('Create user error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la création de l’utilisateur.'
-    });
+    return res.status(500).json({ success: false, message: 'Erreur lors de la création de l’utilisateur.' });
   }
 };
 
@@ -308,43 +199,16 @@ const createUser = async (req, res) => {
 const searchUsers = async (req, res) => {
   try {
     const query = String(req.query?.query || '').trim();
-    if (!query) {
-      return res.status(400).json({
-        success: false,
-        message: 'Veuillez fournir un terme de recherche.'
-      });
-    }
-
+    if (!query) return res.status(400).json({ success: false, message: 'Veuillez fournir un terme de recherche.' });
     const users = await prisma.user.findMany({
-      where: {
-        OR: [
-          { firstName: { contains: query } },
-          { lastName: { contains: query } },
-          { email: { contains: query } }
-        ]
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        role: true,
-        createdAt: true
-      },
+      where: { OR: [{ firstName: { contains: query } }, { lastName: { contains: query } }, { email: { contains: query } }] },
+      select: { id: true, firstName: true, lastName: true, email: true, role: true, isApproved: true, createdAt: true },
       orderBy: { createdAt: 'desc' }
     });
-
-    return res.status(200).json({
-      success: true,
-      data: users,
-      count: users.length
-    });
+    return res.status(200).json({ success: true, data: users, count: users.length });
   } catch (error) {
     console.error('Search users error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la recherche des utilisateurs.'
-    });
+    return res.status(500).json({ success: false, message: 'Erreur lors de la recherche des utilisateurs.' });
   }
 };
 
@@ -353,17 +217,13 @@ const updateUser = async (req, res) => {
   try {
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ success: false, message: 'Non authentifié.' });
-
     const currentUser = await prisma.user.findUnique({ where: { id: userId } });
     if (!currentUser) return res.status(404).json({ success: false, message: 'Utilisateur non trouvé.' });
-
     const email = req.body?.email !== undefined ? normaliseEmail(req.body.email) : undefined;
     if (email && email !== currentUser.email) {
       if (!validEmail(email)) return res.status(400).json({ success: false, message: 'Adresse email invalide.' });
-      const existingUser = await prisma.user.findUnique({ where: { email } });
-      if (existingUser) return res.status(409).json({ success: false, message: 'Email déjà utilisé.' });
+      if (await prisma.user.findUnique({ where: { email } })) return res.status(409).json({ success: false, message: 'Email déjà utilisé.' });
     }
-
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
@@ -376,12 +236,7 @@ const updateUser = async (req, res) => {
         ...(req.body?.image !== undefined && { image: req.body.image || null })
       }
     });
-
-    return res.status(200).json({
-      success: true,
-      message: 'Profil mis à jour avec succès.',
-      user: publicUser(updatedUser)
-    });
+    return res.status(200).json({ success: true, message: 'Profil mis à jour avec succès.', user: publicUser(updatedUser) });
   } catch (error) {
     console.error('Update profile error:', error);
     return res.status(500).json({ success: false, message: 'Erreur lors de la mise à jour du profil.' });
@@ -394,26 +249,14 @@ const changePassword = async (req, res) => {
     const userId = req.user?.userId;
     const currentPassword = String(req.body?.currentPassword || '');
     const newPassword = String(req.body?.newPassword || '');
-
     if (!userId) return res.status(401).json({ success: false, message: 'Non authentifié.' });
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ success: false, message: 'Les deux mots de passe sont obligatoires.' });
-    }
-    if (newPassword.length < 6) {
-      return res.status(400).json({ success: false, message: 'Le nouveau mot de passe doit contenir au moins 6 caractères.' });
-    }
-
+    if (!currentPassword || !newPassword) return res.status(400).json({ success: false, message: 'Les deux mots de passe sont obligatoires.' });
+    if (newPassword.length < 6) return res.status(400).json({ success: false, message: 'Le nouveau mot de passe doit contenir au moins 6 caractères.' });
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return res.status(404).json({ success: false, message: 'Utilisateur non trouvé.' });
-
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ success: false, message: 'Le mot de passe actuel est incorrect.' });
-    }
-
+    if (!await bcrypt.compare(currentPassword, user.password)) return res.status(400).json({ success: false, message: 'Le mot de passe actuel est incorrect.' });
     const password = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({ where: { id: userId }, data: { password } });
-
     return res.status(200).json({ success: true, message: 'Mot de passe modifié avec succès.' });
   } catch (error) {
     console.error('Change password error:', error);
@@ -421,13 +264,4 @@ const changePassword = async (req, res) => {
   }
 };
 
-module.exports = {
-  register,
-  login,
-  getAllUsers,
-  deleteUser,
-  createUser,
-  searchUsers,
-  updateUser,
-  changePassword
-};
+module.exports = { register, login, getAllUsers, updateUserAccess, deleteUser, createUser, searchUsers, updateUser, changePassword };
