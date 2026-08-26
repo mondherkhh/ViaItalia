@@ -66,7 +66,8 @@ html{
         min-height: 100vh;
         transition: background-color 220ms ease, color 220ms ease;
 
-        overflow-x: hidden;
+        /* clip يمنع التسرب الأفقي من غير إنشاء scroll-container يكسر position: sticky. */
+        overflow-x: clip;
     }
 
     html[data-theme="dark"],
