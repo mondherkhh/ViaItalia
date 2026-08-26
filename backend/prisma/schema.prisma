@@ -1,0 +1,337 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "windows", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum AppointmentEtat {
+  PRESENTIEL
+  EN_LIGNE
+}
+
+enum DossierStatus {
+  PENDING
+  VALIDATED
+  REJECTED
+}
+
+enum DossierStage {
+  EN_COURS
+  VALIDE
+}
+
+enum TraductionStatus {
+  EN_COURS
+  VALIDE
+}
+
+enum InscriptionStatus {
+  EN_COURS
+  VALIDE
+}
+
+enum VisaStatus {
+  EN_COURS
+  VALIDE
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+}
+
+enum ReceiptPaymentMethod {
+  ESPECE
+  VIREMENT
+}
+
+enum ContractStatus {
+  PENDING
+  UPLOADED
+  CONFIRMED
+  REJECTED
+}
+
+enum AnnouncementType {
+  INFO
+  SUCCESS
+  WARNING
+  URGENT
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model UniversityInfo {
+  id         Int      @id @default(autoincrement())
+  university String
+  specialty  String
+  level      String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  firstName   String
+  lastName    String
+  email       String   @unique
+  password    String
+  passport    String
+  address     String
+  phoneNumber String
+  image       String?  @db.Text
+  role        Role     @default(USER)
+  isApproved  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  appointments      Appointment[]
+  dossiers          Dossier[]
+  payments          Payment[]
+  receipts          Receipt[]
+  messages          Message[]
+  notifications     Notification[]
+  universityInfo    UniversityInfo[]
+  contracts         Contract[]
+  userAnnouncements UserAnnouncement[]
+  reviews           Review[]
+}
+
+model Appointment {
+  id        Int               @id @default(autoincrement())
+  type      String
+  date      DateTime
+  status    AppointmentStatus @default(PENDING)
+  etat      AppointmentEtat   @default(PRESENTIEL)
+  slotId    Int? // Optional field to link to time slot
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  createdAt DateTime          @default(now())
+}
+
+model TimeSlot {
+  id              Int      @id @default(autoincrement())
+  date            DateTime
+  startTime       String
+  endTime         String
+  maxBookings     Int      @default(1)
+  currentBookings Int      @default(0)
+  isAvailable     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Dossier {
+  id                Int               @id @default(autoincrement())
+  title             String
+  status            DossierStatus     @default(PENDING)
+  traductionStatus  TraductionStatus  @default(EN_COURS)
+  inscriptionStatus InscriptionStatus @default(EN_COURS)
+  visaStatus        VisaStatus        @default(EN_COURS)
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            Int
+  createdAt         DateTime          @default(now())
+}
+
+model Payment {
+  id        Int           @id @default(autoincrement())
+  amount    Float
+  prixTotal Float
+  prixPaye  Float         @default(0)
+  prixReste Float
+  status    PaymentStatus @default(PENDING)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  createdAt DateTime      @default(now())
+}
+
+model Receipt {
+  id            Int                  @id @default(autoincrement())
+  receiptNumber String               @unique
+  amount        Float
+  paymentMethod ReceiptPaymentMethod
+  paymentDate   DateTime
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        Int
+  createdAt     DateTime             @default(now())
+
+  @@index([userId])
+  @@index([paymentDate])
+}
+
+model Review {
+  id         Int          @id @default(autoincrement())
+  rating     Int
+  content    String       @db.Text
+  status     ReviewStatus @default(PENDING)
+  adminNote  String?      @db.Text
+  reviewedAt DateTime?
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([status])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model UniversityProgram {
+  id             Int       @id @default(autoincrement())
+  university     String
+  city           String?
+  programName    String
+  level          String?
+  language       String?
+  field          String
+  openingDate    DateTime?
+  closingDate    DateTime?
+  applicationFee String?
+  tuition        String?
+  sourceName     String
+  sourceUrl      String    @db.Text
+  lastVerifiedAt DateTime
+
+  openingEvidence    Json?
+  closingEvidence    Json?
+  tuitionEvidence    Json?
+  feeEvidence        Json?
+  verificationStatus String @default("NEEDS_REVIEW")
+  confidence         Float?
+
+  admissionWindows AdmissionWindow[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([field])
+  @@index([closingDate])
+  @@index([university])
+  @@index([lastVerifiedAt])
+  @@index([verificationStatus])
+}
+
+model AdmissionWindow {
+  id                  Int      @id @default(autoincrement())
+  universityProgram   UniversityProgram @relation(fields: [universityProgramId], references: [id], onDelete: Cascade)
+  universityProgramId Int
+  label               String?
+  callNumber          Int?
+  placesType          String?
+  openingDate         DateTime?
+  closingDate         DateTime?
+  applicationFee      String?
+  sourceName          String
+  sourceUrl           String   @db.Text
+  openingEvidence     Json?
+  closingEvidence     Json?
+  feeEvidence         Json?
+  verificationStatus  String   @default("NEEDS_REVIEW")
+  confidence          Float?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([universityProgramId])
+  @@index([openingDate])
+  @@index([closingDate])
+  @@index([verificationStatus])
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  content   String
+  sender    String // USER or ADMIN
+  fileName  String? // Optional file name
+  filePath  String? // Optional file path
+  fileType  String? // Optional file type (pdf, doc, image, etc.)
+  fileSize  Int? // Optional file size in bytes
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  content   String
+  isRead    Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  createdAt DateTime @default(now())
+}
+
+model Contract {
+  id        Int            @id @default(autoincrement())
+  fileName  String
+  filePath  String
+  status    ContractStatus @default(PENDING)
+  user      User           @relation(fields: [userId], references: [id])
+  userId    Int
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model Announcement {
+  id        Int              @id @default(autoincrement())
+  title     String
+  content   String
+  type      AnnouncementType @default(INFO)
+  isActive  Boolean          @default(true)
+  link      String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  userAnnouncements UserAnnouncement[]
+}
+
+model UserAnnouncement {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  announcementId Int
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, announcementId])
+}
+
+model StudyInItalyForm {
+  id               Int      @id @default(autoincrement())
+  fullName         String
+  phoneNumber      String
+  email            String
+  city             String
+  passportStatus   String // "Oui" | "Non" | "En cours"
+  currentLevel     String // "Baccalauréat Obtenu" | "Baccalauréat en cours" | "Licence Obtenu" | "Licence en cours" | "Master Obtenu" | "Master en cours"
+  desiredLevel     String // "Licence" | "Master" | "2ème Master"
+  studyLanguage    String // "Italien" | "Anglais"
+  desiredSpecialty String
+  age              Int
+  selectedPack     String // "Pack Essentiel" | "Pack Avancé" | "Pack Premium"
+  submissionDate   DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("study_in_italy_forms")
+}
