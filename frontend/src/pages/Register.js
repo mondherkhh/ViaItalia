@@ -210,7 +210,7 @@ const Register = () => {
       });
 
       setTimeout(() => {
-        navigate("/login");
+        navigate("/study-form?registered=1");
       }, 500);
 
     } catch (err) {
@@ -228,7 +228,7 @@ const Register = () => {
         </LogoContainer>
 
         <Title>Create Account</Title>
-        <Subtitle>Start your journey to Italy 🇮🇹</Subtitle>
+        <Subtitle>Start your journey to Italy</Subtitle>
 
         {message && <Message>{message}</Message>}
 
