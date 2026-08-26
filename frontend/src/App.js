@@ -11,7 +11,7 @@ import Register from "./pages/Register";
 import StudyForm from "./pages/StudyForm";
 
 function App() {
-  const { token, role, loading } = useContext(AuthContext);
+  const { token, role, user, loading } = useContext(AuthContext);
 
   if (loading) {
     return (
@@ -25,8 +25,8 @@ function App() {
     <ThemeProvider>
       <main>
         <LanguageProvider>
-          <div>
-            <Router> {/* 🔥 IMPORTANT */}
+        <div>
+          <Router> {/* 🔥 IMPORTANT */}
             <Routes>
 
               {/* Public Routes */}
@@ -39,9 +39,11 @@ function App() {
               <Route
                 path="/user-dashboard"
                 element={
-                  token && role === "USER"
+                  token && role === "USER" && user?.isApproved === true
                     ? <UserDashboard />
-                    : <Navigate to="/login" />
+                    : token && role === "USER"
+                      ? <Navigate to="/study-form?pending=1" replace />
+                      : <Navigate to="/login" />
                 }
               />
 
@@ -56,8 +58,8 @@ function App() {
               />
 
             </Routes>
-            </Router>
-          </div>
+          </Router>
+        </div>
         </LanguageProvider>
       </main>
     </ThemeProvider>
