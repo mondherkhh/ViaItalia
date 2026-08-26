@@ -1,5 +1,5 @@
-import React, { useRef, useEffect } from "react";
-import styled, { keyframes } from "styled-components";
+import React, { useEffect, useRef } from "react";
+import styled from "styled-components";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { translations } from "../../translations";
@@ -7,479 +7,489 @@ import { useLanguage } from "../../contexts/LanguageContext";
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Animations
-const float = keyframes`
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-15px); }
-  100% { transform: translateY(0px); }
-`;
+const CARD_THEMES = [
+  {
+    cardColor: "#ffffff",
+    darkColor: "#17221e",
+    accentColor: "#138A5B",
+    imageUrl:
+      "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    cardColor: "#f4f7fb",
+    darkColor: "#202033",
+    accentColor: "#C9343E",
+    imageUrl:
+      "https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    cardColor: "#f8f4ee",
+    darkColor: "#202b39",
+    accentColor: "#d99145",
+    imageUrl:
+      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    cardColor: "#eef5f4",
+    darkColor: "#1c2930",
+    accentColor: "#4aa9a0",
+    imageUrl:
+      "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1200&q=80",
+  },
+];
 
-const gradientShift = keyframes`
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-`;
-
-const shimmer = keyframes`
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
-`;
-
-const glowPulse = keyframes`
-  0% { opacity: 0.4; transform: scale(1); }
-  100% { opacity: 0.8; transform: scale(1.2); }
-`;
-
-// Composants stylisés
 const HowItWorksSection = styled.section`
-  min-height: 100vh;
-  padding: 6rem 5%;
   position: relative;
-  overflow-x: hidden;
-  background: #f1f3f2;
+  overflow: visible;
   color: var(--text);
+  background: #f1f3f2;
   transition: background 220ms ease, color 220ms ease;
 
-  body.theme-dark & {
+  body.theme-dark &,
+  :root[data-theme="dark"] & {
     background:
-      radial-gradient(circle at 10% 24%, rgba(19, 138, 91, 0.08), transparent 28%),
-      radial-gradient(circle at 90% 72%, rgba(201, 52, 62, 0.07), transparent 30%),
+      radial-gradient(circle at 10% 18%, rgba(19, 138, 91, 0.1), transparent 28%),
+      radial-gradient(circle at 90% 78%, rgba(201, 52, 62, 0.08), transparent 30%),
       #3b3f43;
     color: #ffffff;
   }
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-  }
 `;
 
-const PageContainer = styled.section`
-  min-height: 100vh;
-  padding: 6rem 5%;
-  position: relative;
-  overflow-x: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-  }
-`;
-
-const FloatingOrb = styled.div`
-  position: absolute;
-  width: 300px;
-  height: 300px;
-  border-radius: 50%;
-  filter: blur(60px);
-  top: 10%;
-  right: -100px;
-  pointer-events: none;
-`;
-
-const FloatingOrbSecondary = styled.div`
-  position: absolute;
-  width: 400px;
-  height: 400px;
-  border-radius: 50%;
-  filter: blur(80px);
-  bottom: 0;
-  left: -150px;
-  pointer-events: none;
-`;
-
-const Header = styled.div`
-  text-align: center;
-  margin-bottom: 3rem;
+const Intro = styled.div`
   position: relative;
   z-index: 2;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: clamp(5rem, 10vw, 8rem) 1.25rem 2rem;
+  text-align: center;
 `;
 
 const Badge = styled.div`
-  display: inline-block;
-  background: rgba(19, 138, 91, 0.10);
-  backdrop-filter: blur(8px);
-  padding: 0.4rem 1.2rem;
-  border-radius: 40px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.4rem 1rem;
   color: #138A5B;
+  background: rgba(19, 138, 91, 0.1);
   border: 1px solid rgba(19, 138, 91, 0.28);
-  margin-bottom: 1.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 `;
 
 const Title = styled.h1`
-  font-size: clamp(2.2rem, 5vw, 3.8rem);
-  font-weight: 800;
+  margin: 1.2rem 0 0;
   color: #202124;
+  font-size: clamp(2.2rem, 5.5vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.055em;
 
-  body.theme-dark & {
+  body.theme-dark &,
+  :root[data-theme="dark"] & {
     color: #ffffff;
   }
 
-  line-height: 1.1;
-  margin-bottom: 1.5rem;
-  opacity: 0;
-
   span {
-    background: linear-gradient(90deg, #C9343E, #138A5B);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: ${shimmer} 4s linear infinite;
+    color: #138A5B;
   }
 `;
 
 const Subtitle = styled.p`
-  color: #6B7280;
-  max-width: 600px;
+  max-width: 620px;
+  margin: 1.2rem auto 0;
+  color: #6b7280;
+  font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+  line-height: 1.7;
 
-  body.theme-dark & {
+  body.theme-dark &,
+  :root[data-theme="dark"] & {
     color: #cbd5e1;
   }
-
-  margin: 1rem auto 0;
-  font-size: 1.1rem;
-  line-height: 1.6;
 `;
 
-const Grid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.25rem;
-  max-width: 1200px;
-  margin: 0 auto;
+/* هذه المساحة هي التي تجبر الصفحة على المرور عبر المراحل الأربع. */
+const DeckScrollArea = styled.div`
   position: relative;
-  z-index: 2;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
+  height: var(--deck-height, 520vh);
 `;
 
-const Card = styled.div`
-  background: #ffffff;
-  backdrop-filter: blur(12px);
+const DeckSticky = styled.div`
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100vh;
+  min-height: 600px;
+  padding: 2rem 1rem;
+`;
 
-  body.theme-dark & {
-    background: rgba(17, 22, 30, 0.88);
-    border-color: rgba(255, 255, 255, 0.14);
-    box-shadow: 0 18px 38px rgba(0, 0, 0, 0.28);
-  }
-
-  border-radius: 20px;
-  border: 1px solid rgba(32, 33, 36, 0.12);
-  padding: 1.35rem 1.5rem;
-  transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+const DeckFrame = styled.div`
   position: relative;
+  width: min(520px, calc(100vw - 2rem));
+  height: min(360px, 58vh);
+  min-height: 300px;
+  perspective: 1400px;
+`;
+
+const DeckCard = styled.article`
+  position: absolute;
+  inset: 0;
   overflow: hidden;
-  cursor: default;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  color: #202124;
+  background: ${({ $cardColor }) => $cardColor};
+  border: 1px solid rgba(32, 33, 36, 0.12);
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgba(32, 33, 36, 0.16);
+  transform: translateY(${({ $index }) => $index * 24}px)
+    scale(${({ $index }) => 1 - $index * 0.035})
+    rotate(${({ $index }) => ($index % 2 === 0 ? -1.2 : 1.2)}deg);
+  transform-origin: center bottom;
+  will-change: transform, opacity;
+
+  body.theme-dark &,
+  :root[data-theme="dark"] & {
+    color: #ffffff;
+    background: ${({ $darkColor }) => $darkColor};
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+  }
 
   &::before {
-    content: '';
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-image: linear-gradient(
+        135deg,
+        ${({ $accentColor }) => `${$accentColor}cc`},
+        transparent 45%,
+        rgba(0, 0, 0, 0.08)
+      ),
+      ${({ $imageUrl }) => `url("${$imageUrl}")`};
+    background-position: center;
+    background-size: cover;
+    opacity: 0.16;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+  }
+
+  body.theme-dark &::before,
+  :root[data-theme="dark"] &::before {
+    opacity: 0.22;
+    mix-blend-mode: screen;
+  }
+
+  &::after {
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
-    height: 4px;
-    background: linear-gradient(90deg, #C9343E, #138A5B);
-    transform: scaleX(0);
+    height: 5px;
+    background: ${({ $accentColor }) => $accentColor};
+    transform: scaleX(0.35);
     transform-origin: left;
-    transition: transform 0.5s ease;
-  }
-
-    &:hover {
-    transform: translateY(-8px);
-    border-color: rgba(19, 138, 91, 0.35);
-    background: #ffffff;
-
-    box-shadow: 0 20px 42px -16px rgba(19, 138, 91, 0.25);
-
-    &::before {
-      transform: scaleX(1);
-    }
-
-    .card-icon {
-      transform: scale(1.05);
-      filter: drop-shadow(0 0 8px rgba(19,138,91,0.22));
-        }
-  }
-
-  body.theme-dark &:hover {
-    background: rgba(24, 32, 42, 0.96);
-    border-color: rgba(61, 220, 151, 0.5);
-    box-shadow: 0 22px 44px rgba(0, 0, 0, 0.4);
   }
 `;
 
-const IconWrapper = styled.div`
+const CardTop = styled.div`
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+`;
 
-  width: 2.1rem;
-  height: 2.1rem;
-  margin-bottom: 0.9rem;
+const CardIcon = styled.div`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-    color: #138A5B;
-  transition: all 0.3s ease;
+  width: 3.1rem;
+  height: 3.1rem;
+  color: ${({ $accentColor }) => $accentColor};
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(32, 33, 36, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 10px 24px rgba(32, 33, 36, 0.12);
 
-  body.theme-dark & {
-    color: #3ddc97;
+  body.theme-dark &,
+  :root[data-theme="dark"] & {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.14);
   }
 
   svg {
-
-    width: 100%;
-    height: 100%;
+    width: 1.65rem;
+    height: 1.65rem;
     fill: none;
     stroke: currentColor;
-    stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+`;
+
+const StepNumber = styled.span`
+  color: ${({ $accentColor }) => $accentColor};
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.08em;
+  opacity: 0.72;
+`;
+
+const CardBody = styled.div`
+  position: relative;
+  z-index: 1;
+  max-width: 90%;
+`;
+
+const CardTitle = styled.h2`
+  margin: 0 0 0.75rem;
+  color: inherit;
+  font-size: clamp(1.3rem, 3vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+`;
+
+const CardDesc = styled.p`
+  max-width: 440px;
+  margin: 0;
+  color: #4b5563;
+  font-size: clamp(0.84rem, 1.6vw, 0.98rem);
+  line-height: 1.65;
+
+  body.theme-dark &,
+  :root[data-theme="dark"] & {
+    color: #cbd5e1;
+  }
+`;
+
+const Highlight = styled.span`
+  position: relative;
+  z-index: 1;
+  align-self: flex-start;
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.38rem 0.8rem;
+  color: ${({ $accentColor }) => $accentColor};
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid ${({ $accentColor }) => `${$accentColor}55`};
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+
+  body.theme-dark &,
+  :root[data-theme="dark"] & {
+    background: rgba(255, 255, 255, 0.09);
+  }
+`;
+
+const ScrollLabel = styled.div`
+  position: absolute;
+  bottom: 1.8rem;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #6b7280;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+
+  &::before {
+    content: "";
+    display: block;
+    width: 1.8rem;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.55;
+  }
+
+  body.theme-dark &,
+  :root[data-theme="dark"] & {
+    color: #cbd5e1;
   }
 `;
 
 const StepIcon = ({ index }) => {
   const icons = [
-    <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></>,
-    <><path d="M6 3h9l3 3v15H6z" /><path d="M15 3v4h4M9 12h6M9 16h6" /></>,
-    <><path d="M3 9.5 12 4l9 5.5-9 5.5z" /><path d="M6 12.5V17c3 2 9 2 12 0v-4.5M21 10v6" /></>,
-    <><path d="M3 12h12" /><path d="m11 7 5 5-5 5" /><path d="M18 5h3v14h-3" /></>,
+    <>
+      <circle cx="12" cy="12" r="8" />
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+    </>,
+    <>
+      <path d="M6 3h9l3 3v15H6z" />
+      <path d="M15 3v4h4M9 12h6M9 16h6" />
+    </>,
+    <>
+      <path d="M3 9.5 12 4l9 5.5-9 5.5z" />
+      <path d="M6 12.5V17c3 2 9 2 12 0v-4.5M21 10v6" />
+    </>,
+    <>
+      <path d="M3 12h12" />
+      <path d="m11 7 5 5-5 5" />
+      <path d="M18 5h3v14h-3" />
+    </>,
   ];
-  return <svg viewBox="0 0 24 24" aria-hidden="true">{icons[index % icons.length]}</svg>;
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      {icons[index % icons.length]}
+    </svg>
+  );
 };
 
-const StepNumber = styled.div`
-  position: absolute;
-  top: 1rem;
-  right: 1.25rem;
-  font-size: 2.5rem;
-  font-weight: 800;
-  background: none;
-  -webkit-background-clip: initial;
-  background-clip: initial;
-  color: #202124;
-  letter-spacing: -0.03em;
-  opacity: 0.5;
-  font-family: monospace;
-
-  body.theme-dark & {
-    background: none;
-    -webkit-background-clip: initial;
-    background-clip: initial;
-    color: #ffffff;
-    opacity: 0.72;
-  }
-`;
-
-const CardTitle = styled.h3`
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #202124;
-
-  body.theme-dark & {
-    color: #ffffff;
-  }
-
-  margin-bottom: 0.75rem;
-  position: relative;
-  z-index: 1;
-`;
-
-const CardDesc = styled.p`
-  color: #4B5563;
-  line-height: 1.6;
-
-  body.theme-dark & {
-    color: #cbd5e1;
-  }
-
-  font-size: 0.88rem;
-  margin-bottom: 1rem;
-`;
-
-const Highlight = styled.div`
-  display: inline-block;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #138A5B;
-  background: rgba(19, 138, 91, 0.10);
-  padding: 0.2rem 0.8rem;
-  border-radius: 20px;
-  margin-top: 0.5rem;
-    letter-spacing: 0.02em;
-
-  body.theme-dark & {
-    color: #36d892;
-    background: rgba(19, 138, 91, 0.18);
-  }
-`;
-
-const CTASection = styled.div`
-  text-align: center;
-  margin-top: 5rem;
-  position: relative;
-  z-index: 2;
-`;
-
-const CTAButton = styled.button`
-  background: linear-gradient(135deg, #138A5B, #0E704A);
-  border: none;
-  padding: 1rem 2.5rem;
-  border-radius: 50px;
-  font-weight: 700;
-  font-size: 1rem;
-  color: #ffffff;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 8px 20px rgba(19, 138, 91, 0.24);
-  backdrop-filter: blur(4px);
-  
-  &:hover {
-    transform: scale(1.05);
-    box-shadow: 0 15px 30px rgba(19, 138, 91, 0.32);
-    background: linear-gradient(135deg, #1AA56E, #138A5B);
-  }
-`;
-
-const SmallNote = styled.p`
-  color: #6B7280;
-  font-size: 0.75rem;
-
-  body.theme-dark & {
-    color: #94a3b8;
-  }
-
-  margin-top: 1rem;
-`;
-
-// Composant principal
 const ModernJourneyPage = () => {
   const { language } = useLanguage();
   const t = translations[language].howItWorks;
-  
   const sectionRef = useRef(null);
+  const deckRef = useRef(null);
   const cardsRef = useRef([]);
-  const headerRef = useRef(null);
-  const ctaRef = useRef(null);
+
+  const steps = t.steps || [];
+  const visibleSteps = steps.slice(0, 4);
+  const deckHeight = `${Math.max(480, (visibleSteps.length - 1) * 145 + 120)}vh`;
 
   useEffect(() => {
-    // Animation d'entrée pour le header
-    gsap.fromTo(
-      headerRef.current,
-      { opacity: 0, y: 40 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 1,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: headerRef.current,
-          start: "top 85%",
-        },
-      }
-    );
+    const context = gsap.context(() => {
+      const cards = cardsRef.current.filter(Boolean);
+      if (!cards.length || !deckRef.current) return;
 
-    // Animation pour le titre
-    const title = headerRef.current.querySelector('h1');
-    if (title) {
-      gsap.to(title, {
-        opacity: 1,
-        duration: 1,
-        delay: 0.3,
-        ease: "power3.out",
-      });
-    }
-
-    // Animation pour chaque carte avec effet staggered
-    cardsRef.current.forEach((el, index) => {
-      gsap.fromTo(
-        el,
-        { opacity: 0, y: 60, rotateX: -10 },
-        {
+      cards.forEach((card, index) => {
+        gsap.set(card, {
+          x: 0,
+          y: index * 24,
+          scale: 1 - index * 0.035,
+          rotation: index % 2 === 0 ? -1.2 : 1.2,
           opacity: 1,
-          y: 0,
-          rotateX: 0,
-          duration: 0.7,
-          delay: index * 0.1,
-          ease: "back.out(0.6)",
-          scrollTrigger: {
-            trigger: el,
-            start: "top 85%",
-            toggleActions: "play none none reverse",
-          },
-        }
-      );
-    });
+          zIndex: cards.length - index,
+        });
+      });
 
-    // Animation pour le CTA
-    gsap.fromTo(
-      ctaRef.current,
-      { opacity: 0, scale: 0.9 },
-      {
-        opacity: 1,
-        scale: 1,
-        duration: 0.8,
-        delay: 0.3,
+      const timeline = gsap.timeline({
+        defaults: { ease: "none" },
         scrollTrigger: {
-          trigger: ctaRef.current,
-          start: "top 90%",
+          trigger: deckRef.current,
+          start: "top top",
+          end: "bottom bottom",
+          scrub: 0.8,
+          snap:
+            cards.length > 1
+              ? {
+                  snapTo: 1 / (cards.length - 1),
+                  duration: { min: 0.25, max: 0.7 },
+                  delay: 0.08,
+                  ease: "power2.out",
+                }
+              : false,
+          invalidateOnRefresh: true,
         },
-      }
-    );
+      });
 
-    return () => {
-      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
-    };
-  }, [language]);
+      cards.forEach((card, index) => {
+        if (index === cards.length - 1) return;
+        const nextCard = cards[index + 1];
+
+        timeline.to(
+          card,
+          {
+            y: -560,
+            x: index % 2 === 0 ? -95 : 95,
+            rotation: index % 2 === 0 ? -10 : 10,
+            scale: 0.84,
+            opacity: 0.12,
+            duration: 1,
+          },
+          index
+        );
+
+        timeline.to(
+          nextCard,
+          {
+            y: 0,
+            x: 0,
+            rotation: 0,
+            scale: 1,
+            zIndex: cards.length + index,
+            duration: 1,
+          },
+          index
+        );
+      });
+
+      ScrollTrigger.refresh();
+    }, sectionRef);
+
+    return () => context.revert();
+  }, [language, visibleSteps.length]);
 
   return (
-    <HowItWorksSection ref={sectionRef} id="how-it-works">
-    <PageContainer>
-      <FloatingOrb />
-      <FloatingOrbSecondary />
-
-      <Header ref={headerRef}>
+    <HowItWorksSection id="how-it-works" ref={sectionRef}>
+      <Intro>
         <Badge>{t.eyebrow}</Badge>
         <Title>
           {t.titleStart} <span>{t.titleHighlight}</span>
         </Title>
-        <Subtitle>
-          {t.subtitle}
-        </Subtitle>
-      </Header>
+        <Subtitle>{t.subtitle}</Subtitle>
+      </Intro>
 
-      <Grid>
-        {t.steps.map((step, idx) => (
-          <Card
-            key={idx}
-            ref={(el) => (cardsRef.current[idx] = el)}
-          >
-            <IconWrapper className="card-icon"><StepIcon index={idx} /></IconWrapper>
-            <StepNumber>{step.number}</StepNumber>
-            <CardTitle>{step.title}</CardTitle>
-            <CardDesc>{step.desc}</CardDesc>
-            <Highlight>{step.badge}</Highlight>
-          </Card>
-        ))}
-      </Grid>
+      <DeckScrollArea ref={deckRef} style={{ height: deckHeight }}>
+        <DeckSticky>
+          <DeckFrame>
+            {visibleSteps.map((step, index) => {
+              const theme = CARD_THEMES[index % CARD_THEMES.length];
+              return (
+                <DeckCard
+                  key={`${step.number || index}-${step.title}`}
+                  ref={(element) => {
+                    cardsRef.current[index] = element;
+                  }}
+                  $index={index}
+                  $cardColor={theme.cardColor}
+                  $darkColor={theme.darkColor}
+                  $accentColor={theme.accentColor}
+                  $imageUrl={theme.imageUrl}
+                >
+                  <CardTop>
+                    <CardIcon $accentColor={theme.accentColor}>
+                      <StepIcon index={index} />
+                    </CardIcon>
+                    <StepNumber $accentColor={theme.accentColor}>
+                      {step.number || String(index + 1).padStart(2, "0")}
+                    </StepNumber>
+                  </CardTop>
 
-   
-    </PageContainer>
+                  <CardBody>
+                    <CardTitle>{step.title}</CardTitle>
+                    <CardDesc>{step.desc}</CardDesc>
+                  </CardBody>
+
+                  <Highlight $accentColor={theme.accentColor}>{step.badge}</Highlight>
+                </DeckCard>
+              );
+            })}
+          </DeckFrame>
+          <ScrollLabel>Scroll to explore</ScrollLabel>
+        </DeckSticky>
+      </DeckScrollArea>
     </HowItWorksSection>
   );
 };
 
 export default ModernJourneyPage;
+
