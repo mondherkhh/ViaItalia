@@ -770,26 +770,19 @@ function AdminDashboard() {
     fetchDossierStats(); // Fetch dossier stats
   }, []);
 
+  const normalizeUsersResponse = (response) => {
+    const payload = response?.data ?? response;
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.users)) return payload.users;
+    return [];
+  };
+
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/auth/users', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      console.log('Users API Response:', response.data);
-      
-      // Handle different response structures
-      let usersData = [];
-      if (response.data && response.data.data) {
-        usersData = response.data.data;
-      } else if (response.data && Array.isArray(response.data)) {
-        usersData = response.data;
-      }
-      
-      setUsers(usersData.filter(u => u.role === 'USER'));
+      const response = await authService.getAllUsers();
+      const usersData = normalizeUsersResponse(response);
+      setUsers(usersData.filter((item) => item.role === 'USER'));
     } catch (error) {
       console.error('Error fetching users:', error);
       setUsers([]);
@@ -798,23 +791,8 @@ function AdminDashboard() {
 
   const fetchAllUsers = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/auth/users', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      console.log('All Users API Response:', response.data);
-      
-      // Handle different response structures
-      let usersData = [];
-      if (response.data && response.data.data) {
-        usersData = response.data.data;
-      } else if (response.data && Array.isArray(response.data)) {
-        usersData = response.data;
-      }
-      
+      const response = await authService.getAllUsers();
+      const usersData = normalizeUsersResponse(response);
       setAllUsers(usersData);
     } catch (error) {
       console.error('Error fetching all users:', error);
@@ -1319,17 +1297,30 @@ function AdminDashboard() {
 
   // Search users function
   const handleSearchUsers = async (query) => {
-    if (!query.trim()) {
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) {
       setSearchResults([]);
       return;
     }
 
     setIsSearching(true);
     try {
-      const response = await authService.searchUsers(query);
-      if (response.success) {
-        setSearchResults(response.data);
+      // Search locally first so the UI remains reliable even if the deployed
+      // backend still expects a different query parameter name.
+      const localResults = allUsers.filter((item) => {
+        const fullName = `${item.firstName || ''} ${item.lastName || ''}`.toLowerCase();
+        return fullName.includes(normalizedQuery)
+          || String(item.email || '').toLowerCase().includes(normalizedQuery);
+      });
+
+      if (localResults.length > 0) {
+        setSearchResults(localResults);
+        return;
       }
+
+      const response = await authService.searchUsers(query);
+      const remoteResults = normalizeUsersResponse(response);
+      setSearchResults(remoteResults);
     } catch (error) {
       console.error('Error searching users:', error);
       setSearchResults([]);
