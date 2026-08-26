@@ -102,6 +102,7 @@ model User {
   phoneNumber String
   image       String?  @db.Text
   role        Role     @default(USER)
+  isApproved  Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   appointments      Appointment[]
@@ -205,18 +206,16 @@ model UniversityProgram {
   field          String
   openingDate    DateTime?
   closingDate    DateTime?
-  applicationFee             String?
-  additionalEnrollmentFee   String?
-  tuition                    String?
+  applicationFee String?
+  tuition        String?
   sourceName     String
   sourceUrl      String    @db.Text
   lastVerifiedAt DateTime
 
   openingEvidence    Json?
   closingEvidence    Json?
-  tuitionEvidence             Json?
-  feeEvidence                 Json?
-  additionalEnrollmentFeeEvidence Json?
+  tuitionEvidence    Json?
+  feeEvidence        Json?
   verificationStatus String @default("NEEDS_REVIEW")
   confidence         Float?
 
