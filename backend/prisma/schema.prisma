@@ -206,8 +206,9 @@ model UniversityProgram {
   field          String
   openingDate    DateTime?
   closingDate    DateTime?
-  applicationFee String?
-  tuition        String?
+  applicationFee             String?
+  additionalEnrollmentFee   String?
+  tuition                    String?
   sourceName     String
   sourceUrl      String    @db.Text
   lastVerifiedAt DateTime
@@ -215,7 +216,8 @@ model UniversityProgram {
   openingEvidence    Json?
   closingEvidence    Json?
   tuitionEvidence    Json?
-  feeEvidence        Json?
+  feeEvidence                 Json?
+  additionalEnrollmentFeeEvidence Json?
   verificationStatus String @default("NEEDS_REVIEW")
   confidence         Float?
 
