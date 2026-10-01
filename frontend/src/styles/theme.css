@@ -1,0 +1,62 @@
+:root {
+  --background: #F8F9FA;
+  --background-secondary: #FFFFFF;
+  --background-tertiary: #F3F4F6;
+  --text-primary: #1A1A1A;
+  --text-secondary: #4B5563;
+  --text-muted: #6B7280;
+  --accent: #138A5B;
+  --accent-hover: #0E6B46;
+  --border-subtle: rgba(0,0,0,0.08);
+  --border-visible: rgba(0,0,0,0.12);
+  --gradient-accent: linear-gradient(90deg, #138A5B, #3B82F6, #A855F7);
+  --color-green: #57D53B;
+  --color-blue: #3B82F6;
+  --color-red: #EF4444;
+  --color-orange: #F59E0B;
+  --color-purple: #A855F7;
+  --color-pink: #EC4899;
+}
+
+:root[data-theme="dark"] {
+  --background: #0F1420;
+  --background-secondary: #1A2030;
+  --background-tertiary: #151B2B;
+  --text-primary: #FFFFFF;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+  --accent: #57D53B;
+  --accent-hover: #4AC02F;
+  --border-subtle: rgba(255,255,255,0.08);
+  --border-visible: rgba(255,255,255,0.15);
+  --gradient-accent: linear-gradient(90deg, #57D53B, #3B82F6, #A855F7);
+  --color-green: #57D53B;
+  --color-blue: #3B82F6;
+  --color-red: #EF4444;
+  --color-orange: #F59E0B;
+  --color-purple: #A855F7;
+  --color-pink: #EC4899;
+}
+
+/* ─── GLOBAL TYPOGRAPHY (AgroNoya-style) ─── */
+:root, :root[data-theme="dark"] {
+  --font-main: 'Poppins', 'Inter', 'Segoe UI', sans-serif;
+  --font-size-h1: clamp(3rem, 7vw, 4.5rem);
+  --font-size-h2: clamp(2rem, 4.5vw, 2.5rem);
+  --font-size-h3: 1.25rem;
+  --font-size-body: 1.05rem;
+  --font-size-badge: 0.75rem;
+  --font-weight-black: 900;
+  --font-weight-bold: 700;
+  --font-weight-semi: 600;
+  --font-weight-normal: 400;
+  --line-height-tight: 1.05;
+  --line-height-body: 1.65;
+  --letter-spacing-badge: 0.15em;
+}
+
+body, html {
+  font-family: var(--font-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

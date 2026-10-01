@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulaire de Consentement - Via Italia</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background: white;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #00ff33;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #00ff33;
+            margin: 0;
+            font-size: 28px;
+        }
+        .header p {
+            margin: 5px 0 0 0;
+            color: #666;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .section h2 {
+            color: #00ff33;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        .checkbox-group {
+            margin: 20px 0;
+        }
+        .checkbox-group label {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 10px;
+            margin-top: 3px;
+        }
+        .signature-section {
+            margin-top: 40px;
+            border-top: 2px solid #ddd;
+            padding-top: 20px;
+        }
+        .signature-field {
+            margin-bottom: 20px;
+        }
+        .signature-field label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .signature-line {
+            border-bottom: 2px solid #333;
+            height: 40px;
+            margin-bottom: 5px;
+        }
+        .date-field {
+            display: flex;
+            gap: 20px;
+        }
+        .date-field > div {
+            flex: 1;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+        @media print {
+            body {
+                padding: 0;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>VIA ITALIA</h1>
+        <p>Service d'Orientation Universitaire</p>
+        <p>Formulaire de Consentement</p>
+    </div>
+
+    <div class="section">
+        <h2>Informations Personnelles</h2>
+        <div class="form-group">
+            <label for="nom">Nom complet *</label>
+            <input type="text" id="nom" name="nom" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Adresse email *</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="telephone">Téléphone *</label>
+            <input type="tel" id="telephone" name="telephone" required>
+        </div>
+        <div class="form-group">
+            <label for="adresse">Adresse</label>
+            <input type="text" id="adresse" name="adresse">
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Objectif du Consentement</h2>
+        <p>Je soussigné(e), certifie donner mon consentement éclairé à Via Italia pour :</p>
+        
+        <div class="checkbox-group">
+            <label>
+                <input type="checkbox" name="consent1" required>
+                <span>Le traitement de mes données personnelles dans le cadre de mon orientation universitaire vers l'Italie</span>
+            </label>
+            <label>
+                <input type="checkbox" name="consent2" required>
+                <span>La communication de mes informations aux universités partenaires italiennes</span>
+            </label>
+            <label>
+                <input type="checkbox" name="consent3" required>
+                <span>Le suivi de mon parcours académique et administratif</span>
+            </label>
+            <label>
+                <input type="checkbox" name="consent4" required>
+                <span>La réception d'informations relatives aux opportunités d'études en Italie</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Droits et Obligations</h2>
+        <p>Je comprends que :</p>
+        <ul>
+            <li>Je peux retirer mon consentement à tout moment</li>
+            <li>Mes données seront traitées conformément au RGPD</li>
+            <li>Je dispose d'un droit d'accès, de modification et de suppression de mes données</li>
+            <li>Les informations fournies sont confidentielles et sécurisées</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Remarques Additionnelles</h2>
+        <div class="form-group">
+            <label for="remarques">Remarques ou questions</label>
+            <textarea id="remarques" name="remarques" placeholder="Veuillez indiquer toute remarque ou question..."></textarea>
+        </div>
+    </div>
+
+    <div class="signature-section">
+        <h2>Signature et Date</h2>
+        <p>En signant ce formulaire, je confirme avoir lu, compris et accepté les termes ci-dessus.</p>
+        
+        <div class="signature-field">
+            <label>Signature du candidat</label>
+            <div class="signature-line"></div>
+        </div>
+        
+        <div class="date-field">
+            <div class="signature-field">
+                <label>Date</label>
+                <div class="signature-line"></div>
+            </div>
+            <div class="signature-field">
+                <label>Lieu</label>
+                <div class="signature-line"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Via Italia - Service d'Orientation Universitaire</p>
+        <p>Email: contact@viaitalia.fr | Téléphone: +33 1 23 45 67 89</p>
+        <p>www.viaitalia.fr</p>
+    </div>
+
+    <div class="no-print" style="margin-top: 20px; text-align: center;">
+        <button onclick="window.print()" style="padding: 10px 20px; background: #00ff33; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            Imprimer le Formulaire
+        </button>
+    </div>
+</body>
+</html>
