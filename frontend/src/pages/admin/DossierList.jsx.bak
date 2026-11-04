@@ -1,0 +1,83 @@
+import React, { useState } from "react";
+import styled from "styled-components";
+import { FiUsers, FiFolder, FiCreditCard, FiCalendar, FiSearch, FiChevronDown } from "react-icons/fi";
+
+const C = { bg: "#EEF2EE", card: "#F4F6F3", border: "#E2E8E2", text: "#12201A", muted: "#6B7B71", green: "#047857", greenSoft: "#E3F2E9", orange: "#EA580C", orangeSoft: "#FFF3E8", gray: "#9CA3AF" };
+const Wrap = styled.div` padding: 1rem; `;
+const SectionTitle = styled.h2` font-size: .75rem; text-transform: uppercase; letter-spacing: .12em; color: ${C.muted}; font-weight: 800; margin: 0 0 .6rem 0; `;
+const KPI = styled.div` display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: .75rem; margin-bottom: 1.25rem; `;
+const KPICard = styled.div` background: ${C.card}; border: 1px solid ${C.border}; border-radius: 16px; padding: .9rem 1rem; display: flex; align-items: flex-start; gap: .75rem; box-shadow: 0 4px 14px rgba(20,40,30,.06); `;
+const Dot = styled.div` width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: ${p => p.$c || C.green}; `;
+const KPILabel = styled.div` font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; color: ${C.muted}; font-weight: 700; `;
+const KPINum = styled.div` font-size: 1.4rem; font-weight: 900; color: ${C.text}; letter-spacing: -.02em; `;
+const KPICap = styled.div` font-size: .75rem; color: ${C.muted}; `;
+const FilterRow = styled.div` display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; background: #fff; border: 1px solid ${C.border}; border-radius: 14px; padding: .6rem .8rem; margin-bottom: .75rem; box-shadow: 0 2px 8px rgba(20,40,30,.04); `;
+const SearchBox = styled.div` position: relative; flex: 1; min-width: 220px; `;
+const SearchInput = styled.input` width: 100%; padding: .45rem .9rem .45rem 2.2rem; border: 1px solid ${C.border}; border-radius: 999px; background: ${C.bg}; font-size: .82rem; outline: none; `;
+const Select = styled.select` padding: .45rem .6rem; border: 1px solid ${C.border}; border-radius: 999px; background: #fff; font-size: .78rem; color: ${C.text}; `;
+const ResetBtn = styled.button` padding: .45rem .7rem; border: 1px solid ${C.border}; border-radius: 999px; background: #fff; font-size: .78rem; font-weight: 600; color: ${C.muted}; cursor: pointer; `;
+const Chips = styled.div` display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .75rem; `;
+const Chip = styled.button` padding: .3rem .75rem; border-radius: 999px; border: 1px solid ${p => p.$a ? C.green : C.border}; background: ${p => p.$a ? "#fff" : C.card}; color: ${p => p.$a ? C.green : C.muted}; font-size: .72rem; font-weight: 600; cursor: pointer; `;
+const TableWrap = styled.div` background: #fff; border: 1px solid ${C.border}; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 14px rgba(20,40,30,.06); `;
+const TH = styled.div` display: flex; gap: 1rem; padding: .55rem .9rem; font-size: .6rem; text-transform: uppercase; letter-spacing: .12em; color: ${C.muted}; font-weight: 700; border-bottom: 1px solid ${C.border}; background: #FAFBF8; `;
+const TD = styled.div` display: flex; gap: 1rem; align-items: center; padding: .65rem .9rem; border-bottom: 1px solid ${C.border}; `;
+const Cell = styled.div` font-size: .82rem; color: ${C.text}; `;
+const Badge = styled.span` display: inline-block; font-size: .65rem; font-weight: 700; padding: .15rem .4rem; border-radius: 999px; `;
+const OpenBtn = styled.a` font-size: .75rem; font-weight: 600; color: ${C.green}; text-decoration: none; border: 1px solid ${C.green}; padding: .2rem .5rem; border-radius: 999px; background: #E3F2E9; `;
+export default function DossierList({ dossiers = [], users = [], onOpen }) {
+  const [search, setSearch] = useState("");
+  const [stageFilter, setStageFilter] = useState("All stages");
+  const stages = ["All stages", "Invited", "Onboarded", "Documents", "Applications", "Acceptance", "Choice locked", "Visa"];
+  const filtered = dossiers.filter(d => {
+    const s = d.status || "PENDING";
+    const matchStage = stageFilter === "All stages" || (stageFilter === "Invited" && s === "PENDING") || (stageFilter === "Onboarded" && (s === "VALIDATED" || s === "EN_COURS"));
+    const matchSearch = !search || (d.title && d.title.toLowerCase().includes(search.toLowerCase())) || String(d.id).includes(search);
+    return matchStage && matchSearch;
+  });
+  const stats = [
+    { label: "TOTAL STUDENTS", value: dossiers.length, dot: C.green, cap: "all statuses" },
+    { label: "ACTIVE CASES", value: dossiers.filter(d => d.status === "PENDING" || d.status === "EN_COURS").length, dot: C.green, cap: "from onboarding to departure" },
+    { label: "DOCS INCOMPLETE", value: dossiers.filter(d => d.stage === "EN_COURS").length, dot: C.orange, cap: "at least one bundle unfinished" },
+    { label: "IN VISA STAGE", value: dossiers.filter(d => d.status === "VALIDATED").length, dot: C.green, cap: "consulate step in progress" },
+    { label: "NEW LEADS", value: dossiers.filter(d => d.status === "PENDING").length, dot: C.gray, cap: "invited, not yet onboarded" },
+  ];
+  return (
+    <Wrap>
+      <SectionTitle>Students</SectionTitle>
+      <div style={{ fontSize: ".85rem", color: C.muted, marginBottom: ".8rem" }}>Every case your agency is handling, from lead to departure.</div>
+      <KPI>{stats.map(s => (<KPICard key={s.label}><Dot $c={s.dot} /><div><KPILabel>{s.label}</KPILabel><KPINum style={{ color: s.dot === C.orange ? C.orange : C.text }}>{s.value}</KPINum><KPICap>{s.cap}</KPICap></div></KPICard>))}</KPI>
+      <FilterRow>
+        <SearchBox><FiSearch size={14} style={{ position: "absolute", left: ".7rem", top: "50%", transform: "translateY(-50%)", color: C.muted }} /><SearchInput placeholder="Name, email, phone or case ref..." value={search} onChange={e => setSearch(e.target.value)} /></SearchBox>
+        <Select value={stageFilter} onChange={e => setStageFilter(e.target.value)}><option>All statuses</option><option>Invited</option><option>Onboarded</option><option>Documents</option></Select>
+        <Select><option>All levels</option><option>Bachelor</option><option>Master</option></Select>
+        <Select><option>All languages</option><option>ENG</option><option>ITA</option></Select>
+        <ResetBtn onClick={() => { setSearch(""); setStageFilter("All stages"); }}>Reset</ResetBtn>
+      </FilterRow>
+      <Chips>{stages.map(s => (<Chip key={s} $a={stageFilter === s} onClick={() => setStageFilter(s)}>{s} {filtered.length}</Chip>))}</Chips>
+      <TableWrap>
+        <TH><span style={{ width: 160 }}>STUDENT</span><span style={{ width: 100 }}>JOURNEY STAGE</span><span style={{ width: 100 }}>DOCUMENTS</span><span style={{ width: 90 }}>TARGET</span><span style={{ width: 70 }}>LANG</span><span style={{ width: 90 }}>PHONE</span><span style={{ flex: 1 }}>NOTES</span><span style={{ width: 60 }} /></TH>
+        {filtered.map(d => (
+          <TD key={d.id}>
+            <Cell style={{ width: 160 }}><div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}><div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg,#047857,#0B7A43)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: ".65rem", fontWeight: 800 }}>{(users.find(u => u.id === d.userId)?.firstName || "ST").slice(0,2).toUpperCase()}</div><div><div style={{ fontWeight: 600, fontSize: ".82rem" }}>{users.find(u => u.id === d.userId)?.firstName || `Dossier #${d.id}`}</div><div style={{ fontSize: ".7rem", color: C.muted }}>{users.find(u => u.id === d.userId)?.email || "—"}</div></div></div></Cell>
+            <Cell style={{ width: 100 }}><Badge style={{ background: d.status === "VALIDATED" ? "#E3F2E9" : d.status === "PENDING" ? "#F3F4F6" : "#FFF3E8", color: d.status === "VALIDATED" ? C.green : d.status === "PENDING" ? C.muted : C.orange }}>{d.status}</Badge></Cell>
+            <Cell style={{ width: 100 }}><div style={{ width: 60, height: 8, background: "#EAECEA", borderRadius: 999, position: "relative", overflow: "hidden" }}><div style={{ width: "60%", height: "100%", background: C.green, borderRadius: 999 }} /></div><div style={{ fontSize: ".65rem", color: C.muted }}>2 of 4 folders</div></Cell>
+            <Cell style={{ width: 90 }}><span style={{ fontWeight: 600 }}>{d.stage || "Bachelor"}</span></Cell>
+            <Cell style={{ width: 70 }}><span style={{ fontSize: ".7rem", fontFamily: "monospace", color: C.muted, background: "#F3F4F6", padding: ".15rem .4rem", borderRadius: 999 }}>ENG</span></Cell>
+            <Cell style={{ width: 90 }}><span style={{ fontFamily: "monospace", fontSize: ".82rem" }}>{users.find(u => u.id === d.userId)?.phoneNumber || "—"}</span></Cell>
+            <Cell style={{ flex: 1 }}><button style={{ fontSize: ".75rem", border: "1px solid #E2E8E2", borderRadius: 999, padding: ".2rem .5rem", background: "#fff", cursor: "pointer", color: C.muted }}>Notes ▾</button></Cell>
+            <Cell style={{ width: 60 }}><OpenBtn href="#" onClick={() => onOpen && onOpen(d.id)}>Open</OpenBtn></Cell>
+          </TD>
+        ))}
+      </TableWrap>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: ".75rem", fontSize: ".78rem", color: C.muted }}>
+        <span>Showing {filtered.length} of {dossiers.length} students</span>
+        <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+          <span>6 / page</span><button style={{ border: "1px solid #E2E8E2", borderRadius: 6, padding: ".2rem .5rem", background: "#fff" }}>Prev</button>
+          <button style={{ width: 28, height: 28, borderRadius: "50%", background: C.green, color: "#fff", border: "none", fontWeight: 800, fontSize: ".75rem" }}>1</button>
+          <button style={{ width: 28, height: 28, borderRadius: "50%", background: "#fff", color: C.muted, border: "1px solid #E2E8E2", fontWeight: 600, fontSize: ".75rem" }}>2</button>
+          <button style={{ border: "1px solid #E2E8E2", borderRadius: 6, padding: ".2rem .5rem", background: "#fff" }}>Next</button>
+        </div>
+      </div>
+    </Wrap>
+  );
+}

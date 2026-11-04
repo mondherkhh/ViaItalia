@@ -1,331 +1,135 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
-  FiBell,
-  FiMoon,
-  FiSun,
-  FiLogOut,
-  FiInfo,
-  FiCheckCircle,
-  FiAlertTriangle,
-  FiXCircle,
-  FiRefreshCw
+  FiMoon, FiSun, FiLogOut, FiSearch
 } from 'react-icons/fi';
 import { useAuth } from '../../../../context/AuthContext';
 import { useTheme } from '../../../../contexts/ThemeContext';
-import { useNotifications } from '../../hooks/useNotifications';
-import { animateNotification, animateHeaderFadeDown } from '../../utils/animations';
+import { useLanguage } from '../../../../contexts/LanguageContext';
+import { animateHeaderFadeDown } from '../../utils/animations';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import logo from '../../../../assets/logo.svg';
 import {
-  HeaderContainer,
-  LogoContainer,
-  Logo,
-  LogoText,
-  HeaderActions,
-  NotificationContainer,
-  NotificationButton,
-  NotificationBadge,
-  NotificationDropdown,
-  NotificationHeader,
-  NotificationTitle,
-  NotificationActions,
-  NotificationAction,
-  NotificationList,
-  NotificationItem,
-  NotificationIcon,
-  NotificationContent,
-  NotificationMessage,
-  NotificationTime,
-  NotificationEmpty,
-  NotificationLoading,
-  NotificationSpinner,
-  UserDropdown,
-  UserInfoHeader,
-  UserInfoName,
-  UserMenuItems,
-  UserMenuItem,
-  UserMenuItemIcon,
-  UserAvatar,
-  UserInfo,
-  MobileMenuButton,
-  MobileMenu,
-  MobileMenuItem,
-  ThemeToggle,
+  HeaderCard, HeaderLeft, HeaderText, HeaderTitle, HeaderSubtitle,
+  SearchWrapper, SearchInput, HeaderActionsList,
+  UserInfo, UserAvatar, UserDropdown, UserInfoHeader, UserInfoName,
+  UserMenuItems, UserMenuItem, UserMenuItemIcon,
+  ThemeToggle
 } from './Header.styles';
 
 const Header = ({ onLogout, activeMenu, menuItems = [], onMenuClick }) => {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { 
-    notifications, 
-    unreadCount, 
-    isLoading, 
-    markAllAsRead, 
-    markAsRead, 
-    deleteNotification,
-    getNotificationIcon,
-    getNotificationTypeLabel,
-    formatNotificationTime
-  } = useNotifications(user?.id);
-  
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const { language } = useLanguage();
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const dropdownRef = useRef(null);
-  const userDropdownRef = useRef(null);
+  const [searchValue, setSearchValue] = useState('');
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 8 });
+  const avatarBtnRef = useRef(null);
   const headerRef = useRef(null);
 
-  // Register GSAP plugins
+  useEffect(() => { gsap.registerPlugin(ScrollTrigger); }, []);
   useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
+    if (headerRef.current) animateHeaderFadeDown(headerRef.current);
   }, []);
-
-  // Animate header on scroll
   useEffect(() => {
-    const element = headerRef.current;
-    
-    if (element) {
-      ScrollTrigger.create({
-        trigger: element,
-        start: "top top",
-        end: "bottom top",
-        scrub: true,
-        onUpdate: self => {
-          const progress = self.progress;
-          if (progress > 0.1) {
-            gsap.to(element, {
-              background: `rgba(255, 255, 255, ${0.08 + (progress * 0.12)})`,
-              backdropFilter: `blur(${25 + (progress * 10)}px)`,
-            });
-          }
-        }
-      });
-    }
-  }, []);
-
-  // Animate header on mount
-  useEffect(() => {
-    if (headerRef.current) {
-      animateHeaderFadeDown(headerRef.current);
-    }
-  }, []);
-
-  // Handle click outside to close dropdowns
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
-      }
-      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
-        setIsUserDropdownOpen(false);
-      }
+    const handleClickOutside = (e) => {
+      if (avatarBtnRef.current && !avatarBtnRef.current.contains(e.target) && !(e.target.closest && e.target.closest('.user-dropdown-portal'))) setIsUserDropdownOpen(false);
     };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // Animate header on mount
-  useEffect(() => {
-    if (headerRef.current) {
-      animateHeaderFadeDown(headerRef.current);
-    }
-  }, []);
-
-  const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
-  };
-
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const toggleUserDropdown = () => {
-    setIsUserDropdownOpen(!isUserDropdownOpen);
-  };
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
-  const handleMarkAllAsRead = async () => {
-    try {
-      await markAllAsRead();
-    } catch (error) {
-      console.error('Error marking all as read:', error);
-    }
-  };
-
-  const handleNotificationClick = async (notification) => {
-    try {
-      if (!notification.isRead) {
-        await markAsRead(notification.id);
+    setIsUserDropdownOpen(open => {
+      const next = !open;
+      if (next && avatarBtnRef.current) {
+        const rect = avatarBtnRef.current.getBoundingClientRect();
+        setDropdownPos({ top: rect.bottom + 8, right: 8 + (window.innerWidth - rect.right) });
       }
-      // You can add navigation logic here based on notification type
-      setIsDropdownOpen(false);
-    } catch (error) {
-      console.error('Error handling notification click:', error);
-    }
+      return next;
+    });
   };
-
-  const handleDeleteNotification = async (e, notificationId) => {
-    e.stopPropagation();
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
-      await deleteNotification(notificationId);
-    } catch (error) {
-      console.error('Error deleting notification:', error);
+      if (onLogout) await onLogout();
+    } catch (e) {
+      console.error('Logout failed:', e);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
-  const handleLogout = () => {
-    if (onLogout) {
-      onLogout();
+  const getTitle = () => {
+    switch (activeMenu) {
+      case 'messagerie': return 'Messagerie';
+      case 'annonces': return 'Annonces';
+      case 'users': return 'Utilisateurs';
+      case 'appointments': return 'Rendez-vous';
+      case 'contracts': return 'Contrats';
+      case 'dossiers': return 'Dossiers';
+      case 'studyForms': return "Formulaires d'étude";
+      case 'payments': return 'Paiements';
+      case 'receipts': return 'Invoices';
+      case 'university-programs': return 'University Programs';
+      case 'reviews': return 'Avis clients';
+      default: return 'Tableau de Bord';
     }
-  };
-
-  const getNotificationIconComponent = (type) => {
-    const normalizedType = String(type || '').toUpperCase();
-    if (normalizedType === 'SUCCESS') return <FiCheckCircle aria-hidden="true" />;
-    if (normalizedType === 'WARNING') return <FiAlertTriangle aria-hidden="true" />;
-    if (normalizedType === 'ERROR') return <FiXCircle aria-hidden="true" />;
-    if (normalizedType === 'UPDATE') return <FiRefreshCw aria-hidden="true" />;
-    return <FiInfo aria-hidden="true" />;
-  };
-
-  const getNotificationType = (notification) => {
-    if (notification.type === 'ERROR' || notification.type === 'error') return 'error';
-    if (notification.type === 'WARNING' || notification.type === 'warning') return 'warning';
-    if (notification.type === 'SUCCESS' || notification.type === 'success') return 'success';
-    return 'info';
   };
 
   return (
-    <HeaderContainer ref={headerRef}>
-      <LogoContainer>
-        <Logo src={logo} alt="ViaItalia Logo" />
-      </LogoContainer>
+    <HeaderCard ref={headerRef}>
+      <HeaderLeft>
+        <HeaderText>
+          <HeaderTitle>{getTitle()}</HeaderTitle>
+          <HeaderSubtitle>
+            {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </HeaderSubtitle>
+        </HeaderText>
+      </HeaderLeft>
 
-      {/* Mobile Menu Button */}
-      <MobileMenuButton 
-        onClick={toggleMobileMenu}
-        isMobileMenuOpen={isMobileMenuOpen}
-      >
-        <span></span>
-      </MobileMenuButton>
+      <SearchWrapper>
+        <FiSearch size={16} aria-hidden="true" style={{ color: 'var(--adm-muted)', flexShrink: 0 }} />
+        <SearchInput type="text" value={searchValue} onChange={(e) => setSearchValue(e.target.value)} placeholder="Rechercher..." />
+      </SearchWrapper>
 
-      {/* Mobile Menu */}
-      <MobileMenu isVisible={isMobileMenuOpen}>
-        {menuItems.map((item) => (
-          <MobileMenuItem 
-            key={item.id}
-            onClick={() => {
-              if (onMenuClick) {
-                onMenuClick(item.id);
-              }
-              setIsMobileMenuOpen(false);
-            }}
-            isActive={activeMenu === item.id}
-          >
-            <span>{item.icon}</span>
-            {item.text}
-          </MobileMenuItem>
-        ))}
-      </MobileMenu>
-
-      <HeaderActions>
-        <ThemeToggle
-          type="button"
-          onClick={toggleTheme}
+      <HeaderActionsList>
+        <ThemeToggle type="button" onClick={toggleTheme}
           aria-label={theme === 'dark' ? 'Activer le mode clair' : 'Activer le mode sombre'}
-          title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
-        >
+          title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}>
           {theme === 'dark' ? <FiSun aria-hidden="true" /> : <FiMoon aria-hidden="true" />}
-          {theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+          <span>{theme === 'dark' ? 'Mode clair' : 'Mode sombre'}</span>
         </ThemeToggle>
 
-        <NotificationContainer ref={dropdownRef}>
-          <NotificationButton onClick={toggleDropdown} hasUnread={unreadCount > 0}>
-            <FiBell aria-hidden="true" />
-            {unreadCount > 0 && (
-              <NotificationBadge>
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </NotificationBadge>
-            )}
-          </NotificationButton>
-
-          <NotificationDropdown $isOpen={isDropdownOpen}>
-            <NotificationHeader>
-              <NotificationTitle>Notifications</NotificationTitle>
-              <NotificationActions>
-                {unreadCount > 0 && (
-                  <NotificationAction onClick={handleMarkAllAsRead}>
-                    Tout marquer comme lu
-                  </NotificationAction>
-                )}
-              </NotificationActions>
-            </NotificationHeader>
-
-            {isLoading ? (
-              <NotificationLoading>
-                <NotificationSpinner />
-                Chargement...
-              </NotificationLoading>
-            ) : notifications.length === 0 ? (
-              <NotificationEmpty>
-                Aucune notification
-              </NotificationEmpty>
-            ) : (
-              <NotificationList>
-                {notifications.map((notification) => (
-                  <NotificationItem
-                    key={notification.id}
-                    isUnread={!notification.isRead}
-                    onClick={() => handleNotificationClick(notification)}
-                  >
-                    <NotificationIcon type={getNotificationType(notification)} isUnread={!notification.isRead}>
-                      {getNotificationIconComponent(notification.type)}
-                    </NotificationIcon>
-                    <NotificationContent>
-                      <NotificationMessage isUnread={!notification.isRead}>
-                        {notification.message || 
-                         notification.title || 
-                         notification.content || 
-                         getNotificationTypeLabel(notification.type)}
-                      </NotificationMessage>
-                      <NotificationTime>
-                        {formatNotificationTime(notification.createdAt)}
-                      </NotificationTime>
-                    </NotificationContent>
-                  </NotificationItem>
-                ))}
-              </NotificationList>
-            )}
-          </NotificationDropdown>
-        </NotificationContainer>
-
-        <UserInfo ref={userDropdownRef}>
-          <UserAvatar onClick={toggleUserDropdown}>
-            {user?.firstName?.[0] || user?.email?.[0] || 'U'}
-          </UserAvatar>
-          
-          <UserDropdown $isOpen={isUserDropdownOpen}>
-            <UserInfoHeader>
-              <UserInfoName>
-                {user?.firstName && user?.lastName 
-                  ? `${user.firstName} ${user.lastName}`
-                  : user?.email || 'Utilisateur'
-                }
-              </UserInfoName>
-            </UserInfoHeader>
-            
-            <UserMenuItems>
-              <UserMenuItem onClick={handleLogout}>
-                <UserMenuItemIcon><FiLogOut aria-hidden="true" /></UserMenuItemIcon>
-                Déconnexion
-              </UserMenuItem>
-            </UserMenuItems>
-          </UserDropdown>
+        <UserInfo>
+          <UserAvatar ref={avatarBtnRef} onClick={toggleUserDropdown}>{user?.firstName?.[0] || user?.email?.[0] || 'U'}</UserAvatar>
         </UserInfo>
-      </HeaderActions>
-    </HeaderContainer>
+        {isUserDropdownOpen && createPortal(
+          <div className="user-dropdown-portal" style={{ position: 'fixed', top: dropdownPos.top, right: dropdownPos.right, zIndex: 9999 }}>
+            <UserDropdown $isOpen={true} $pos={dropdownPos}>
+              <UserInfoHeader>
+                <UserInfoName>
+                  {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email || 'Utilisateur'}
+                </UserInfoName>
+              </UserInfoHeader>
+              <UserMenuItems>
+                {isLoggingOut ? (
+                  <UserMenuItem disabled>
+                    <UserMenuItemIcon><FiLogOut aria-hidden="true" /></UserMenuItemIcon>Déconnexion...
+                  </UserMenuItem>
+                ) : (
+                  <UserMenuItem onClick={handleLogout}>
+                    <UserMenuItemIcon><FiLogOut aria-hidden="true" /></UserMenuItemIcon>Déconnexion
+                  </UserMenuItem>
+                )}
+              </UserMenuItems>
+            </UserDropdown>
+          </div>,
+          document.body
+        )}
+      </HeaderActionsList>
+    </HeaderCard>
   );
 };
-
 export default Header;

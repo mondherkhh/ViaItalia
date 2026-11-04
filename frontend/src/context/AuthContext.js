@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
+import axiosInstance from '../api/axiosInstance';
 
 export const AuthContext = createContext();
 
@@ -22,6 +23,25 @@ export const AuthProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(true);
 
+  // Load user profile (with allowedSections) after token exists
+  useEffect(() => {
+    const tok = localStorage.getItem('token');
+    if (!tok) { setLoading(false); return; }
+    axiosInstance.get('/auth/me')
+      .then(r => r.data)
+      .then(data => {
+        if (data?.success && data?.data) {
+          const d = data.data;
+          const updated = { ...JSON.parse(localStorage.getItem('user') || '{}'), ...d, allowedSections: d.allowedSections || [] };
+          setUser(updated);
+          localStorage.setItem('user', JSON.stringify(updated));
+          if (d.role) { setRole(d.role); localStorage.setItem('role', d.role); }
+        }
+        setLoading(false);
+      })
+      .catch(() => { setLoading(false); });
+  }, []);
+
   useEffect(() => {
     setLoading(false);
   }, []);
@@ -29,11 +49,14 @@ export const AuthProvider = ({ children }) => {
   const loginUser = (newToken, newRole, userData) => {
     setToken(newToken);
     setRole(newRole);
-    setUser(userData);
+    // Ensure allowedSections (from /auth/me or login response) is stored
+    const data = userData || {};
+    if (data.allowedSections === undefined && Array.isArray(data.allowedSections)) data.allowedSections = [];
+    setUser(data);
     localStorage.setItem("token", newToken);
     localStorage.setItem("role", newRole);
-    if (userData) {
-      localStorage.setItem("user", JSON.stringify(userData));
+    if (data) {
+      localStorage.setItem("user", JSON.stringify(data));
     }
   };
 

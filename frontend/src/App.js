@@ -47,11 +47,11 @@ function App() {
                 }
               />
 
-              {/* Protected ADMIN Route */}
+              {/* Protected ADMIN / AGENT Route */}
               <Route
                 path="/admin-dashboard"
                 element={
-                  token && role === "ADMIN"
+                  token && (role === "ADMIN" || role === "AGENT")
                     ? <AdminDashboard />
                     : <Navigate to="/login" />
                 }
@@ -67,3 +67,4 @@ function App() {
 }
 
 export default App;
+window.addEventListener('unhandledrejection', e => console.error('Unhandled rejection:', e.reason));

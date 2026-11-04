@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { FiMapPin, FiBookOpen, FiAward, FiCheck } from 'react-icons/fi';
 import { useAuth } from '../../../../../context/AuthContext';
 import { useUniversityInfo } from '../../../hooks/useUniversityInfo';
 import { animateUniversityForm, animateUniversitySummary } from '../../../utils/animations';
@@ -160,7 +161,10 @@ const UniversitySection = () => {
   const renderUniversityForm = () => (
     <UniversityForm>
       <UniversityCard data-university-card>
-        <UniversityIcon>🏫</UniversityIcon>
+        <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'center', marginBottom:8 }}>
+          <span style={{ width:24, height:24, borderRadius:'50%', background:'#138a5b', display:'inline-flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:11, fontWeight:700 }}>1</span>
+          <div style={{ width:36, height:36, borderRadius:'50%', background:'#138a5b', display:'inline-flex', alignItems:'center', justifyContent:'center' }}><FiMapPin size={16} color="#fff" /></div>
+        </div>
         <UniversityTitle>Université</UniversityTitle>
         <UniversitySelect
           name="university"
@@ -212,7 +216,10 @@ const UniversitySection = () => {
       </UniversityCard>
 
       <UniversityCard data-university-card>
-        <UniversityIcon>📚</UniversityIcon>
+        <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'center', marginBottom:8 }}>
+          <span style={{ width:24, height:24, borderRadius:'50%', background:'#138a5b', display:'inline-flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:11, fontWeight:700 }}>2</span>
+          <div style={{ width:36, height:36, borderRadius:'50%', background:'#138a5b', display:'inline-flex', alignItems:'center', justifyContent:'center' }}><FiBookOpen size={16} color="#fff" /></div>
+        </div>
         <UniversityTitle>Spécialité</UniversityTitle>
         <UniversitySelect
           name="specialty"
@@ -258,7 +265,10 @@ const UniversitySection = () => {
       </UniversityCard>
 
       <UniversityCard data-university-card>
-        <UniversityIcon>🎯</UniversityIcon>
+        <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'center', marginBottom:8 }}>
+          <span style={{ width:24, height:24, borderRadius:'50%', background:'#138a5b', display:'inline-flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:11, fontWeight:700 }}>3</span>
+          <div style={{ width:36, height:36, borderRadius:'50%', background:'#138a5b', display:'inline-flex', alignItems:'center', justifyContent:'center' }}><FiAward size={16} color="#fff" /></div>
+        </div>
         <UniversityTitle>Niveau d'Étude</UniversityTitle>
         <UniversitySelect
           name="level"
@@ -287,15 +297,15 @@ const UniversitySection = () => {
       <SummaryTitle>Résumé de votre parcours</SummaryTitle>
       <SummaryGrid>
         <SummaryItem>
-          <SummaryIcon>🏫</SummaryIcon>
+          <SummaryIcon><FiMapPin size={18} color="#10b981" /></SummaryIcon>
           <SummaryLabel>{getUniversityDisplayName(universityInfo.university)}</SummaryLabel>
         </SummaryItem>
         <SummaryItem>
-          <SummaryIcon>📚</SummaryIcon>
+          <SummaryIcon><FiBookOpen size={18} color="#10b981" /></SummaryIcon>
           <SummaryLabel>{universityInfo.specialty || 'Non sélectionnée'}</SummaryLabel>
         </SummaryItem>
         <SummaryItem>
-          <SummaryIcon>🎯</SummaryIcon>
+          <SummaryIcon><FiAward size={18} color="#10b981" /></SummaryIcon>
           <SummaryLabel>{getLevelDisplayName(universityInfo.level)}</SummaryLabel>
         </SummaryItem>
       </SummaryGrid>

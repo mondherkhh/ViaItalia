@@ -307,16 +307,41 @@ body:not(.theme-dark) .vi-page .vi-stat-trend {
   box-shadow: none;
 }
 .vi-receipt-box {
-  border: 2px solid #111;
+  border: none;
   border-radius: 28px;
-  padding: 24px 24px 16px;
+  padding: 28px 32px 22px;
   position: relative;
-  min-height: 433px;
-  height: 433px;
+  min-height: 540px;
+  height: auto;
   box-sizing: border-box;
   font-family: "Times New Roman", Times, serif;
   background: #fff;
+  max-width: 1000px;
+  width: 94vw;
+  margin: 0 auto;
 }
+
+/* Receipt preview (separate from add modal) — no white overlay, no 2px border */
+.rc-overlay { position: fixed; inset: 0; background: rgba(6, 19, 33, 0.85); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 24px; overflow-y: auto; }
+.rc-stage { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.rc-paper { width: 1010px; max-width: 94vw; height: 540px; background: #fff; border-radius: 28px; padding: 34px 34px 20px 30px; box-sizing: border-box; position: relative; font-family: "Times New Roman", Times, serif; color: #111; }
+.rc-logo { position: absolute; top: 38px; left: 32px; width: 122px; height: auto; display: block; }
+.rc-title { text-align: center; font-family: "Anton", sans-serif; font-weight: 400; font-size: 28px; white-space: nowrap; margin: 0; padding-top: 8px; letter-spacing: 0.4px; }
+.rc-date { position: absolute; top: 140px; right: 34px; font-family: "Times New Roman", Times, serif; font-size: 18px; text-align: right; white-space: nowrap; }
+.rc-ids { position: absolute; top: 190px; left: 34px; right: 34px; text-align: center; font-size: 15px; border-top: 1px solid #d6d6d6; border-bottom: 1px solid #d6d6d6; padding: 6px 0; letter-spacing: 0.1px; }
+.rc-ids span { margin: 0 24px; white-space: nowrap; }
+.rc-ids b { font-weight: 700; }
+.rc-body { position: absolute; top: 245px; left: 34px; right: 34px; bottom: 110px; display: grid; grid-template-columns: 1fr 280px; align-items: center; gap: 20px; }
+.rc-lines { font-size: 20px; line-height: 1.7; }
+.rc-lines > div { margin: 6px 0; }
+.rc-lines b { font-weight: 700; }
+.rc-stamp { text-align: center; font-size: 20px; font-weight: 700; color: #161616; }
+.rc-note { position: absolute; left: 30px; right: 30px; bottom: 18px; font-size: 13px; font-style: italic; color: #333; line-height: 1.35; margin: 0; }
+.rc-actions { display: flex; justify-content: center; gap: 14px; align-items: center; }
+.rc-actions .btn-green { background: #18b560; color: #fff; border: 0; border-radius: 10px; padding: 14px 28px; font-weight: 700; font-size: 14px; cursor: pointer; }
+.rc-actions .btn-green:disabled { opacity: 0.6; cursor: default; }
+.rc-actions .btn-grey { background: #e8eef5; color: #333; border: 0; border-radius: 10px; padding: 14px 28px; font-size: 14px; cursor: pointer; }
+/* Print support removed; PDF download uses html2canvas + jsPDF directly. */
 .vi-receipt-box,
 .vi-receipt-box * {
   font-family: "Times New Roman", Times, serif;
@@ -344,11 +369,12 @@ body:not(.theme-dark) .vi-page .vi-stat-trend {
   text-align: center;
   font-family: "Anton", Arial, sans-serif !important;
   font-weight: 400 !important;
-  font-size: 21px;
-  line-height: 1;
+  font-size: 24px;
+  line-height: 1.1;
   margin: 3px 0 0;
   letter-spacing: 0.3px;
   color: #111;
+  white-space: nowrap;
 }
 .vi-receipt-date {
   text-align: right;
@@ -388,16 +414,13 @@ body:not(.theme-dark) .vi-page .vi-stat-trend {
   margin-left: 15px;
 }
 .vi-receipt-sign {
-  position: absolute;
-  right: 66px;
-  bottom: 160px;
-  z-index: 5;
-  display: block !important;
-  visibility: visible !important;
+  display: block;
+  visibility: visible;
   text-align: center;
   font-size: 18px;
   min-width: 190px;
-  color: #161616 !important;
+  color: #161616;
+  margin-top: 12px;
 }
 .vi-receipt-sign strong {
   display: block !important;
@@ -417,13 +440,14 @@ body:not(.theme-dark) .vi-page .vi-stat-trend {
   transform: none;
 }
 .vi-receipt-box > p {
-  position: absolute;
-  left: 25px;
-  right: 25px;
-  bottom: 7px;
-  margin: 0 !important;
+  position: static;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  margin: 16px 0 0 0 !important;
   color: #333 !important;
   font-size: 12px !important;
+  font-style: italic;
 }
 .vi-receipt-actions {
   display: flex;
@@ -471,97 +495,7 @@ body:not(.theme-dark) .vi-page .vi-stat-trend {
   margin-top: 18px;
   cursor: pointer;
 }
-@media print {
-  html,
-  body {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 190mm !important;
-    height: 98mm !important;
-    min-height: 98mm !important;
-    overflow: hidden !important;
-    background: #fff !important;
-  }
-  body * {
-    visibility: hidden !important;
-  }
-  .vi-page {
-    visibility: visible !important;
-    position: fixed !important;
-    inset: 0 !important;
-    width: 190mm !important;
-    height: 98mm !important;
-    min-height: 98mm !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    background: #fff !important;
-    color: #161616 !important;
-  }
-  .vi-page > * {
-    visibility: hidden !important;
-  }
-  .vi-receipt-modal,
-  .vi-receipt-modal * {
-    visibility: visible !important;
-  }
-  .vi-receipt-modal {
-    position: fixed !important;
-    inset: 0 !important;
-    width: 190mm !important;
-    height: 98mm !important;
-    background: #fff !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    display: block !important;
-    overflow: hidden !important;
-  }
-  .vi-receipt-card {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 190mm !important;
-    height: 98mm !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    background: #fff !important;
-    box-shadow: none !important;
-  }
-  .vi-receipt-box {
-    margin: 0 !important;
-    width: 190mm !important;
-    height: 98mm !important;
-    min-height: 98mm !important;
-    padding: 8mm 7mm 4mm !important;
-    box-sizing: border-box !important;
-    page-break-before: avoid !important;
-    page-break-after: avoid !important;
-    page-break-inside: avoid !important;
-    break-before: avoid !important;
-    break-after: avoid !important;
-    break-inside: avoid !important;
-  }
-  .vi-receipt-sign {
-    display: block !important;
-    visibility: visible !important;
-    right: 22mm !important;
-    bottom: 44mm !important;
-    color: #161616 !important;
-  }
-  .vi-receipt-sign strong {
-    display: block !important;
-    visibility: visible !important;
-    color: #161616 !important;
-  }
-  .vi-receipt-actions,
-  .vi-close {
-    display: none !important;
-  }
-  @page {
-    size: 190mm 98mm;
-    margin: 0 !important;
-  }
-}
+/* Legacy print block for old vi-receipt-modal kept for backward compat but not used by ReceiptPreview */
 @media(max-width:1100px) {
   .vi-stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -652,4 +586,36 @@ body:not(.theme-dark) .vi-page .vi-stat-trend {
   .vi-receipt-actions {
     flex-wrap: wrap;
   }
+}
+
+/* Modal overlay fix: dark opaque fixed background, centered card max 520px */
+.vi-receipt-modal {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(6, 19, 33, 0.88) !important;
+  z-index: 1000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 24px !important;
+  overflow-y: auto !important;
+}
+.vi-receipt-card {
+  background: var(--vi-panel) !important;
+  border: 1px solid var(--vi-border) !important;
+  border-radius: 16px !important;
+  padding: 28px 28px 22px !important;
+  width: 520px !important;
+  max-width: 92vw !important;
+  box-shadow: 0 28px 60px rgba(0,0,0,.35) !important;
+  color: var(--vi-text) !important;
+  position: relative !important;
+}
+body:not(.theme-dark) .vi-receipt-modal {
+  background: rgba(6, 19, 33, 0.82) !important;
+}
+body:not(.theme-dark) .vi-receipt-card {
+  background: #fff !important;
+  border-color: rgba(17, 17, 17, 0.14) !important;
+  color: #111 !important;
 }

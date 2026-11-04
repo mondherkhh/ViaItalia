@@ -220,7 +220,7 @@ const Login = () => {
 
       loginUser(res.data.token, res.data.role, res.data.user);
 
-      if (res.data.role === "ADMIN") {
+      if (res.data.role === "ADMIN" || res.data.role === "AGENT") {
         navigate("/admin-dashboard");
       } else {
         navigate("/user-dashboard");

@@ -62,7 +62,7 @@ const PaymentSection = () => {
     error, 
     fetchPayments, 
     fetchLatestPayment,
-    addPayment 
+    // addPayment removed — client read-only
   } = usePayments(user?.id);
   
   const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
@@ -120,7 +120,7 @@ const PaymentSection = () => {
     }
 
     try {
-      await addPayment(payment.id, addPaymentAmount);
+      console.warn("Client read-only: addPayment disabled. Use admin Payments."); return;
       setShowAddPaymentModal(false);
       setAddPaymentAmount('');
       

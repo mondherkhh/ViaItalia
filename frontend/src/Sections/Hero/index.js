@@ -315,10 +315,10 @@ const StatSeparator = styled.div`
 const Title = styled.h1`
   font-size: var(--font-size-h1);
   font-weight: var(--font-weight-black);
-  color: #1A1A1A;
+  color: var(--text-primary);
   line-height: 1.1;
   margin: 0;
-  opacity: 0;
+  opacity: 1; /* Fixed: title now visible */
 
   span {
     color: var(--accent, #57D53B);

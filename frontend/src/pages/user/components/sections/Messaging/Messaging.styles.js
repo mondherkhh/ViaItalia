@@ -29,11 +29,10 @@ export const MessagingContainer = styled.div`
   }
 
   
-  /* All other Messaging content stays white in both modes. */
-  &&.messaging-root,
-  &&.messaging-root * {
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
+  /* Message bubbles and content use context-aware colors */
+  &&.messaging-root .message-bubble-content,
+  &&.messaging-root .message-bubble-text {
+    color: inherit !important;
   }
 
   &&.messaging-root input::placeholder,

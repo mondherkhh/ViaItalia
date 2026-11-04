@@ -122,6 +122,20 @@ const SubmitButton = styled.button`
   }
 `;
 
+/* ───────── INVITE BANNER ───────── */
+const InviteBanner = styled.div`
+  margin-bottom: 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  text-align: center;
+  line-height: 1.5;
+
+  ${({ $tone }) => ($tone === "ok"
+    ? `background: rgba(87,213,59,0.12); border: 1px solid rgba(87,213,59,0.3); color: #8fe36f;`
+    : `background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #ff6b6b;`)}
+`;
+
 /* ───────── MESSAGE ───────── */
 const Message = styled.div`
   margin-bottom: 1rem;
@@ -163,6 +177,9 @@ const Register = () => {
 
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const inviteToken = new URLSearchParams(window.location.search).get("invite") || null;
+  const [inviteStatus, setInviteStatus] = useState(inviteToken ? "loading" : null); // loading | valid | invalid
+  const [inviteEmail, setInviteEmail] = useState(null);
 
   const cardRef = useRef(null);
 
@@ -176,6 +193,33 @@ const Register = () => {
       ease: "power3.out"
     });
   }, []);
+
+  /* ───────── INVITE VALIDATION ───────── */
+  useEffect(() => {
+    if (!inviteToken) return;
+    let active = true;
+    const check = async () => {
+      try {
+        const res = await axiosInstance.get(`/public-invites/${encodeURIComponent(inviteToken)}`);
+        if (!active) return;
+        if (res.data?.valid) {
+          setInviteStatus("valid");
+          if (res.data.email) {
+            setInviteEmail(res.data.email);
+            setFormData(prev => ({ ...prev, email: res.data.email }));
+          }
+        } else {
+          setInviteStatus("invalid");
+        }
+      } catch (err) {
+        if (!active) return;
+        setInviteStatus("invalid");
+        setMessage(err.response?.data?.message || "This invitation link is invalid or has expired.");
+      }
+    };
+    check();
+    return () => { active = false; };
+  }, [inviteToken]);
 
   /* ───────── HANDLERS ───────── */
   const handleChange = (e) => {
@@ -199,7 +243,8 @@ const Register = () => {
     try {
       await axiosInstance.post("/auth/register", {
         ...formData,
-        role: "USER"
+        role: "USER",
+        inviteToken: inviteToken || undefined
       });
 
       // smooth success animation
@@ -230,6 +275,17 @@ const Register = () => {
         <Title>Create Account</Title>
         <Subtitle>Start your journey to Italy</Subtitle>
 
+        {inviteStatus === "valid" && (
+          <InviteBanner $tone="ok">
+            You have been invited. {inviteEmail ? `Create your account with ${inviteEmail}.` : "Create your account to get started."}
+          </InviteBanner>
+        )}
+        {inviteStatus === "invalid" && (
+          <InviteBanner $tone="bad">
+            This invitation link is invalid or has expired. You can still register normally below.
+          </InviteBanner>
+        )}
+
         {message && <Message>{message}</Message>}
 
         <form onSubmit={handleSubmit}>
@@ -245,7 +301,14 @@ const Register = () => {
 
           <FormGroup>
             <Label>Email</Label>
-            <Input type="email" name="email" onChange={handleChange} required />
+            <Input
+              type="email"
+              name="email"
+              onChange={handleChange}
+              required
+              readOnly={inviteStatus === "valid" && !!inviteEmail}
+              style={inviteStatus === "valid" && inviteEmail ? { opacity: 0.7, cursor: "not-allowed" } : undefined}
+            />
           </FormGroup>
 
           <FormGroup>

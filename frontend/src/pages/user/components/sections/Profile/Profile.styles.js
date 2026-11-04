@@ -147,7 +147,7 @@ const formControlBase = css`
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-    background: ${DESIGN_TOKENS.colors.background.dark};
+    background: ${props => props.dark ? "#071523" : "#fff"};
   }
 `;
 
@@ -179,20 +179,20 @@ export const ProfileContainer = styled.div`
   padding: ${DESIGN_TOKENS.spacing.xxl} ${DESIGN_TOKENS.spacing.xl};
   max-width: 900px;
   margin: 0 auto;
-  margin-top: -150px;
+  margin-top: 20px;
   min-height: 100vh;
   animation: ${fadeIn} 0.5s ease-in-out;
   
   @media (max-width: 1024px) {
     padding: ${DESIGN_TOKENS.spacing.xl} ${DESIGN_TOKENS.spacing.lg};
-   margin-top: -80px;
+   margin-top: 20px;
 
   }
   
   @media (max-width: 768px) {
 
    
-    margin-top: -80px;
+    margin-top: 20px;
     margin-left: -120px;
     padding-right: -80px;
 
@@ -200,7 +200,7 @@ export const ProfileContainer = styled.div`
   
   @media (max-width: 480px) {
     padding: ${DESIGN_TOKENS.spacing.md} ${DESIGN_TOKENS.spacing.sm};
-   margin-top: -80px;
+   margin-top: 20px;
     margin-left: -80px;
 
   }

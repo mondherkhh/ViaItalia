@@ -7,7 +7,7 @@ import { translations } from "../../translations";
 import guidanceImg from "../../assets/images/about/guidance-illustration.png";
 import expertiseImg from "../../assets/images/about/expertise-illustration.png";
 import supportImg from "../../assets/images/about/support-illustration.png";
-import resultsImg from "../../assets/images/about/results-illustration.png";
+import worldMapImg from "../../assets/images/about/world-map-carte.png";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -59,7 +59,7 @@ const Section = styled.section`
 /* ── Header ── */
 const Header = styled.div`
   text-align: left;
-  margin-bottom: 4rem;
+  margin-bottom: 1.5rem;
   opacity: 0;
   max-width: 1100px;
   width: 100%;
@@ -99,7 +99,7 @@ const Title = styled.h2`
 const Subtitle = styled.p`
   color: var(--text-secondary);
   max-width: 500px;
-  margin: 0;
+  margin: 0 0 0.25rem 0;
   line-height: 1.6;
 `;
 
@@ -357,12 +357,11 @@ const About = () => {
         <VisualFrame>
           <FrameTitle>Notre plateforme</FrameTitle>
           <FrameDesc>Un accompagnement complet et personnalisé pour chaque étudiant, du choix de l'université jusqu'à l'arrivée en Italie.</FrameDesc>
-          <CampusGrid>
-          <CampusItem><img src={guidanceImg} alt="Guidance" /></CampusItem>
-          <CampusItem><img src={resultsImg} alt="Results" /></CampusItem>
-          <CampusItem><img src={expertiseImg} alt="Expertise" /></CampusItem>
-          <CampusItem><img src={supportImg} alt="Support" /></CampusItem>
-        </CampusGrid>
+          <img
+            src={worldMapImg}
+            alt="Carte monde — connexion Tunisie-Italie"
+            style={{ width: "100%", height: "auto", maxHeight: 200, objectFit: "cover", borderRadius: 12, display: "block" }}
+          />
         </VisualFrame>
       </Grid>
 

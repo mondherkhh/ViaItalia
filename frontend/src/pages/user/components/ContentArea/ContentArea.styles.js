@@ -2,11 +2,11 @@ import styled from 'styled-components';
 
 export const ContentAreaWrapper = styled.main`
   flex: 1;
-  padding: 2rem;        /* ❌ نحّينا الفراغ */
-  margin-left: 2rem;    /* ❌ نحّينا sidebar offset */
-  margin-top: 6rem;     /* ❌ نحّينا header space */
-  margin-right: -15rem;
-  height: 100vh;     /* ✅ full height */
+  padding: 2rem;
+  margin-left: 0;
+  margin-top: 0;
+  margin-right: 0;
+  height: 100%;
   width: 100%;
 `;
 export const ContentContainer = styled.div`
@@ -207,8 +207,8 @@ export const ContentEmptySubMessage = styled.div`
 `;
 
 export const ContentTransition = styled.div`
-  opacity: ${props => props.isTransitioning ? 0 : 1};
-  transform: ${props => props.isTransitioning ? 'translateY(20px)' : 'translateY(0)'};
+  opacity: ${props => props.$isTransitioning ? 0 : 1};
+  transform: ${props => props.$isTransitioning ? 'translateY(20px)' : 'translateY(0)'};
   transition: all 0.3s ease;
 `;
 

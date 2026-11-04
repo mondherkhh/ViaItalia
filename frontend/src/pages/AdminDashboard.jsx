@@ -1,38 +1,35 @@
+import MessagesPage from "./admin/MessagesPage";
+import AlertsPage from "./admin/AlertsPage";
+import PaymentsPage from "./admin/PaymentsPage";
+import CalendarPage from "./admin/CalendarPage";
 import React, { useState, useEffect, useContext, useRef } from "react";
+import styled from "styled-components";
+import { gsap } from "gsap";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { gsap } from "gsap";
-import styled from "styled-components";
 import { useTheme } from "../contexts/ThemeContext";
-import {
-  FiArchive,
-  FiBell,
-  FiBookOpen,
-  FiCalendar,
-  FiCreditCard,
-  FiEdit3,
-  FiFileText,
-  FiFolder,
-  FiMessageSquare,
-  FiMoon,
-  FiStar,
-  FiSun,
-  FiUsers,
-  FiX,
-  FiMenu,
-} from "react-icons/fi";
-import axios from "axios";
+import { useTranslation } from "../contexts/LanguageContext";
+import { FiArchive, FiBell, FiBookOpen, FiCalendar, FiCreditCard, FiEdit3, FiFileText, FiFolder, FiMessageSquare, FiMoon, FiStar, FiSun, FiUsers, FiX, FiMenu, FiSettings } from "react-icons/fi";
+import axiosInstance from "../api/axiosInstance";
 import messageService from "../api/messageService";
 import contractService from "../api/contractService";
 import announcementService from "../api/announcementService";
 import appointmentService from "../api/appointmentService";
+import AdminUsers from "./admin/AdminUsers";
 import universityInfoService from '../api/universityInfoService';
 import authService from "../api/authService";
 import dossierService from "../api/dossierService";
-import DossierKanban from "../components/DossierKanban";
 import AdminReceipts from "./AdminReceipts";
 import UniversityPrograms from "./UniversityPrograms";
 import AdminReviews from "./AdminReviews";
+import AdminSidebar from "./admin/AdminSidebar";
+import AdminHeaderCard from "./admin/AdminHeaderCard";
+import DashboardHome from "./admin/DashboardHome";
+import DossierDetail from "./admin/DossierDetail";
+import DossierList from "./admin/DossierList";
+import SettingsPage from "./admin/SettingsPage";
+import { OfficeProvider, useOffice } from "../contexts/OfficeContext";
+import InviteStudentModal from "./admin/InviteStudentModal";
 
 // Register GSAP
 gsap.registerPlugin();
@@ -44,37 +41,37 @@ const logoSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' vi
 const DashboardContainer = styled.div`
   min-height: 100vh;
   width: 100%;
-  background: #061321;
+  background: var(--adm-bg);
   display: flex;
   overflow-x: hidden;
-  color: #e8eef7;
+  color: var(--adm-text);
   transition: background 220ms ease, color 220ms ease;
 
-  body.theme-light & {
-    background: #f1f3f2;
-    color: #111827;
+  body[data-theme="light"] & {
+    background: var(--adm-bg);
+    color: var(--adm-text);
 
-    [class*="text-white"] { color: #111827 !important; }
-    [class*="text-gray-"] { color: #475569 !important; }
-    [class*="text-green-"] { color: #138a5b !important; }
-    [class*="bg-gray-"] { background-color: #ffffff !important; }
+    [class*="text-white"] { color: var(--adm-text) !important; }
+    [class*="text-gray-"] { color: var(--adm-muted) !important; }
+    [class*="text-green-"] { color: var(--adm-accent) !important; }
+    [class*="bg-gray-"] { background-color: var(--adm-panel) !important; }
     [class*="bg-black"] { background-color: rgba(15, 23, 42, 0.38) !important; }
-    [class*="border-gray-"] { border-color: rgba(15, 23, 42, 0.14) !important; }
-    [class*="placeholder-gray-"]::placeholder { color: #64748b !important; }
+    [class*="border-gray-"] { border-color: var(--adm-border) !important; }
+    [class*="placeholder-gray-"]::placeholder { color: var(--adm-muted) !important; }
     [class*="bg-green-"][class*="text-white"],
     [class*="bg-blue-"][class*="text-white"],
     [class*="bg-red-"][class*="text-white"],
     [class*="bg-purple-"][class*="text-white"] { color: #ffffff !important; }
 
-    table { color: #111827; }
+    table { color: var(--adm-text); }
   }
 
-  body.theme-dark & {
+  body[data-theme="dark"] & {
     background:
       radial-gradient(circle at 0% 0%, rgba(19, 138, 91, 0.12), transparent 34%),
       radial-gradient(circle at 100% 0%, rgba(201, 52, 62, 0.1), transparent 34%),
-      #3b3f43;
-    color: #f8fafc;
+      var(--adm-bg);
+    color: var(--adm-text);
   }
   
   @media (max-width: 768px) {
@@ -84,18 +81,18 @@ const DashboardContainer = styled.div`
 
 const Sidebar = styled.div`
  width: 202px;
-  background: #071523;
-  border-right: 1px solid #13283d;
+  background: var(--adm-bg);
+  border-right: 1px solid var(--adm-border);
   padding: 1.25rem 0;
   display: flex;
   flex-direction: column;
   z-index: 1000;
-  color: var(--white);
+  color: var(--adm-text);
 
-  body.theme-light & {
-    background: #ffffff;
-    border-right-color: #dbe4ea;
-    color: #111827;
+  body[data-theme="light"] & {
+    background: var(--adm-panel);
+    border-right-color: var(--adm-border);
+    color: var(--adm-text);
   }
 
   @media (max-width: 768px) {
@@ -165,7 +162,7 @@ const SidebarItem = styled.div`
   color: #b7c4d3;
   font-weight: 500;
 
-  body.theme-light & {
+  body[data-theme="light"] & {
     color: #334155;
   }
 
@@ -181,7 +178,7 @@ const SidebarItem = styled.div`
     border-left: 3px solid #20c875;
   }
 
-  body.theme-light &.active {
+  body[data-theme="light"] &.active {
     background: linear-gradient(90deg, rgba(19, 138, 91, .14), rgba(19, 138, 91, .04));
     color: #087443;
     border-left-color: #138a5b;
@@ -219,7 +216,7 @@ const Header = styled.header`
   background: #071321;
   border-bottom: 1px solid #13283d;
 
-  body.theme-light & {
+  body[data-theme="light"] & {
     background: rgba(255, 255, 255, 0.94);
     border-bottom-color: #dbe4ea;
   }
@@ -241,7 +238,7 @@ const LogoutButton = styled.button`
   background-color: var(--green);
   padding: 0.5rem 1rem;
   border-radius: 20px;
-  color: var(--white);
+  color: var(--adm-text);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -282,9 +279,17 @@ const ContentArea = styled.div`
   padding: 28px 34px 40px;
   overflow-y: auto;
   background: #061321;
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
 
-  body.theme-light & {
+  body[data-theme="light"] & {
     background: #f1f3f2;
+    background-image:
+      linear-gradient(to right, rgba(0,0,0,0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0,0,0,0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
   }
   
   @media (max-width: 768px) {
@@ -302,7 +307,7 @@ const ContentCard = styled.div`
   opacity: 0;
   transform: translateY(30px);
 
-  body.theme-light & {
+  body[data-theme="light"] & {
     background: rgba(255, 255, 255, 0.88);
     border-color: rgba(15, 23, 42, 0.1);
     box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
@@ -319,7 +324,7 @@ const UserList = styled.div`
   max-height: 400px;
   overflow-y: auto;
 
-  body.theme-light & {
+  body[data-theme="light"] & {
     background: rgba(255, 255, 255, 0.78);
     border-color: rgba(15, 23, 42, 0.1);
   }
@@ -337,7 +342,7 @@ const UserItem = styled.div`
   color: rgba(255, 255, 255, 0.8);
   background: rgba(255, 255, 255, 0.05);
 
-  body.theme-light & {
+  body[data-theme="light"] & {
     color: #334155;
     background: rgba(248, 250, 252, 0.9);
 
@@ -393,7 +398,7 @@ const HamburgerButton = styled.button`
   cursor: pointer;
   padding: 0.5rem;
 
-  body.theme-light & { color: #111827; }
+  body[data-theme="light"] & { color: #111827; }
 
   @media (max-width: 768px) {
     display: flex;
@@ -419,7 +424,7 @@ const MobileOverlay = styled.div`
 const BottomNav = styled.div`
   display: none;
 
-  body.theme-light & {
+  body[data-theme="light"] & {
     background: rgba(255, 255, 255, 0.94);
     border-top-color: #dbe4ea;
   }
@@ -434,7 +439,7 @@ const BottomNavItem = styled.div`
   transition: all 0.3s ease;
   color: rgba(255, 255, 255, 0.7);
 
-  body.theme-light & { color: #475569; }
+  body[data-theme="light"] & { color: #475569; }
   
   &:hover {
     color: var(--green);
@@ -463,14 +468,17 @@ const BottomNavItem = styled.div`
   }
 `;
 
-function AdminDashboard() {
+function AdminDashboardInner() {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const { theme, toggleTheme } = useTheme();
+  const { selectedOffice, setSelectedOffice } = useOffice();
   
-  const [activeMenu, setActiveMenu] = useState('messagerie');
+  const [activeMenu, setActiveMenu] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
+  const goTo = () => {};
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -525,6 +533,7 @@ function AdminDashboard() {
 
   // Study forms state
   const [studyForms, setStudyForms] = useState([]);
+  const [universityInfos, setUniversityInfos] = useState([]);
   const [selectedStudyForm, setSelectedStudyForm] = useState(null);
   const [studyFormSearchQuery, setStudyFormSearchQuery] = useState('');
   const [studyFormSearchResults, setStudyFormSearchResults] = useState([]);
@@ -548,7 +557,9 @@ function AdminDashboard() {
   const [dossiers, setDossiers] = useState([]);
   const [dossierStats, setDossierStats] = useState(null);
   const [selectedDossier, setSelectedDossier] = useState(null);
+  const [activeDossierId, setActiveDossierId] = useState(null);
   const [showCreateDossierModal, setShowCreateDossierModal] = useState(false);
+  const [dossierInitialTab, setDossierInitialTab] = useState("profile");
   const [newDossier, setNewDossier] = useState({
     title: '',
     userId: '',
@@ -642,29 +653,8 @@ function AdminDashboard() {
       
       // Send email notification to all users
       console.log('=== ABOUT TO SEND EMAIL NOTIFICATION ===');
-      try {
-        const announcementId = response.data?.id || response.data?.data?.id || response.id;
-        console.log('=== ANNOUNCEMENT ID FOR EMAIL ===', announcementId);
-        
-        if (announcementId) {
-          console.log('=== CALLING EMAIL NOTIFICATION ===');
-          try {
-            await announcementService.sendAnnouncementNotification(announcementId);
-            console.log('Email notification sent to all users');
-          } catch (emailError) {
-            console.error('=== EMAIL NOTIFICATION ERROR ===', emailError);
-            console.error('Error sending email notification:', emailError);
-            // Don't fail the announcement creation if email fails
-          }
-        } else {
-          console.error('No announcement ID found in response:', response);
-        }
-      } catch (error) {
-        console.error('Error sending email notification:', error);
-      }
-      
-      console.log('=== EMAIL NOTIFICATION SECTION COMPLETED ===');
-      
+      // (notification service not implemented — skipped safely)
+
       // Reset form
       console.log('=== RESETTING FORM ===');
       setNewAnnouncement({
@@ -770,12 +760,13 @@ function AdminDashboard() {
     fetchPaymentStats(); // Fetch payment stats
     fetchDossiers(); // Fetch dossiers
     fetchDossierStats(); // Fetch dossier stats
+    (async () => { try { const res = await axiosInstance.get("/university-info", { headers: { Authorization: "Bearer " + localStorage.getItem("token") } }); const data = Array.isArray(res.data) ? res.data : (res.data && res.data.data ? res.data.data : []); setUniversityInfos(data); } catch(e){} })();
   }, []);
 
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/auth/users', {
+      const response = await axiosInstance.get('/auth/users', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -783,15 +774,16 @@ function AdminDashboard() {
       
       console.log('Users API Response:', response.data);
       
-      // Handle different response structures
+      // Unwrap all response shapes
+      const d = response.data;
       let usersData = [];
-      if (response.data && response.data.data) {
-        usersData = response.data.data;
-      } else if (response.data && Array.isArray(response.data)) {
-        usersData = response.data;
-      }
-      
-      setUsers(usersData.filter(u => u.role === 'USER'));
+      if (Array.isArray(d)) usersData = d;
+      else if (d && Array.isArray(d.data)) usersData = d.data;
+      else if (d && d.data && Array.isArray(d.data.data)) usersData = d.data.data;
+      else if (d && d.success && d.data && Array.isArray(d.data)) usersData = d.data;
+      else if (d && Array.isArray(d.users)) usersData = d.users;
+      else if (d && d.data && Array.isArray(d.data.users)) usersData = d.data.users;
+      setUsers(usersData);
     } catch (error) {
       console.error('Error fetching users:', error);
       setUsers([]);
@@ -801,7 +793,7 @@ function AdminDashboard() {
   const fetchAllUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/auth/users', {
+      const response = await axiosInstance.get('/auth/users', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -809,14 +801,15 @@ function AdminDashboard() {
       
       console.log('All Users API Response:', response.data);
       
-      // Handle different response structures
+      // Unwrap all response shapes
+      const d = response.data;
       let usersData = [];
-      if (response.data && response.data.data) {
-        usersData = response.data.data;
-      } else if (response.data && Array.isArray(response.data)) {
-        usersData = response.data;
-      }
-      
+      if (Array.isArray(d)) usersData = d;
+      else if (d && Array.isArray(d.data)) usersData = d.data;
+      else if (d && d.data && Array.isArray(d.data.data)) usersData = d.data.data;
+      else if (d && d.success && d.data && Array.isArray(d.data)) usersData = d.data;
+      else if (d && Array.isArray(d.users)) usersData = d.users;
+      else if (d && d.data && Array.isArray(d.data.users)) usersData = d.data.users;
       setAllUsers(usersData);
     } catch (error) {
       console.error('Error fetching all users:', error);
@@ -1375,7 +1368,7 @@ function AdminDashboard() {
   // Study forms API functions
   const fetchStudyForms = async () => {
     try {
-      const response = await axios.get('/api/study-forms');
+      const response = await axiosInstance.get('/study-forms');
       if (response.data.success) {
         setStudyForms(response.data.data || []);
         console.log('Study forms loaded:', response.data.data);
@@ -1396,7 +1389,7 @@ function AdminDashboard() {
 
     setIsSearchingStudyForms(true);
     try {
-      const response = await axios.get(`/api/study-forms/search?name=${encodeURIComponent(query)}`);
+      const response = await axiosInstance.get(`/study-forms/search?name=${encodeURIComponent(query)}`);
       if (response.data.success) {
         setStudyFormSearchResults(response.data.data || []);
       } else {
@@ -1427,7 +1420,7 @@ function AdminDashboard() {
   // Payment API functions
   const fetchPayments = async () => {
     try {
-      const response = await axios.get('/api/payments');
+      const response = await axiosInstance.get('/payments');
       if (response.data.success) {
         setPayments(response.data.data || []);
         console.log('Payments loaded:', response.data.data);
@@ -1442,7 +1435,7 @@ function AdminDashboard() {
 
   const fetchPaymentStats = async () => {
     try {
-      const response = await axios.get('/api/payments/stats');
+      const response = await axiosInstance.get('/payments/stats');
       if (response.data.success) {
         setPaymentStats(response.data.data);
         console.log('Payment stats loaded:', response.data.data);
@@ -1462,7 +1455,7 @@ function AdminDashboard() {
     }
 
     try {
-      const response = await axios.post(`/api/payments/${selectedPayment.id}/add-payment`, {
+      const response = await axiosInstance.post(`/payments/${selectedPayment.id}/add-payment`, {
         amount: parseFloat(addPaymentAmount)
       });
 
@@ -1520,7 +1513,7 @@ function AdminDashboard() {
     }
 
     try {
-      const response = await axios.post('/api/payments', {
+      const response = await axiosInstance.post('/api/payments', {
         userId: parseInt(newPayment.userId),
         amount: parseFloat(newPayment.prixTotal), // Add amount field
         prixTotal: parseFloat(newPayment.prixTotal),
@@ -1877,494 +1870,49 @@ function AdminDashboard() {
   };
 
 const menuItems = [
-  { id: 'messagerie', icon: FiMessageSquare, text: 'Messagerie' },
-  { id: 'annonces', icon: FiBell, text: 'Annonces' },
-  { id: 'users', icon: FiUsers, text: 'Utilisateurs' },
-  { id: 'appointments', icon: FiCalendar, text: 'Rendez-vous' },
-  { id: 'contracts', icon: FiFileText, text: 'Contrats' },
-  { id: 'dossiers', icon: FiFolder, text: 'Dossiers' },
-  { id: 'studyForms', icon: FiEdit3, text: 'Formulaires d\'étude' },
-  { id: 'payments', icon: FiCreditCard, text: 'Paiements' },
-  { id: 'receipts', icon: FiArchive, text: 'Invoices' },
-  { id: 'university-programs', icon: FiBookOpen, text: 'University Programs' },
-  { id: 'reviews', icon: FiStar, text: 'Avis clients' }
+  { id: 'messagerie', icon: FiMessageSquare, text: 'Messages', section: 'messages' },
+  { id: 'annonces', icon: FiBell, text: 'Annonces', section: 'alerts' },
+  { id: 'users', icon: FiUsers, text: 'Utilisateurs', section: 'users' },
+  { id: 'appointments', icon: FiCalendar, text: 'Rendez-vous', section: 'calendar' },
+  { id: 'contracts', icon: FiFileText, text: 'Contrats', section: 'users' },
+  { id: 'dossiers', icon: FiFolder, text: 'Dossiers', section: 'students' },
+  { id: 'studyForms', icon: FiEdit3, text: 'Formulaires d\'étude', section: 'students' },
+  { id: 'payments', icon: FiCreditCard, text: 'Paiements', section: 'payments' },
+  { id: 'receipts', icon: FiArchive, text: 'Invoices', section: 'invoices' },
+  { id: 'university-programs', icon: FiBookOpen, text: 'University Programs', section: 'programs' },
+  { id: 'reviews', icon: FiStar, text: 'Avis clients', section: 'reviews' },
+  { id: 'settings', icon: FiSettings, text: 'Settings', section: 'users' }
 ];
 
   const renderContent = () => {
     switch(activeMenu) {
+      case 'dashboard':
+        return <DashboardHome dossiers={dossiers} users={users} payments={payments} appointments={appointments} />;
+      case 'dossier-detail':
+        {
+          // Find the selected dossier from activeMenu state; pass real props
+          const activeDossier = dossiers.find(d => d.id === activeDossierId) || dossiers[0];
+          return <DossierDetail key={`${activeDossierId}-${dossierInitialTab}`} dossier={activeDossier} users={users} payments={payments} initialTab={dossierInitialTab} />;
+        }
+      case 'calendar':
+        return <CalendarPage openDossier={(userId, tab) => { setDossierInitialTab(tab || "profile"); const d = dossiers.find(x => x.userId === userId) || (dossiers.find(x => x.id === userId) || null); if (d) { setActiveMenu('dossier-detail'); setActiveDossierId(d.id); setSelectedDossier(d); } else { setActiveMenu('dossier-detail'); setActiveDossierId(userId); setSelectedDossier(null); } }} />;
       case 'receipts':
         return <AdminReceipts />;
       case 'university-programs':
         return <UniversityPrograms />;
       case 'reviews':
         return <AdminReviews />;
+      case 'settings':
+        return <SettingsPage />;
       case 'messagerie':
-        return (
-          <>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* User List */}
-              <div className="lg:col-span-1">
-                <ContentCard className="content-card">
-                  <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                    <FiUsers aria-hidden="true" /> Utilisateurs
-                  </h2>
-                  <UserList>
-                    {users.length === 0 ? (
-                      <div className="text-center py-8">
-                        <p className="text-gray-400">
-                          Aucun utilisateur trouvé
-                        </p>
-                      </div>
-                    ) : (
-                      users.map((user) => (
-                        <UserItem
-                          key={user.id}
-                          className={selectedUser?.id === user.id ? 'active' : ''}
-                          onClick={() => setSelectedUser(user)}
-                        >
-                          <div className="user-info">
-                            <div className="user-name">
-                              {user.firstName} {user.lastName}
-                            </div>
-                            <div className="user-email">
-                              {user.email}
-                            </div>
-                          </div>
-                          <div className="message-count">
-                            <FiMessageSquare aria-hidden="true" />
-                          </div>
-                        </UserItem>
-                      ))
-                    )}
-                  </UserList>
-                </ContentCard>
-              </div>
-
-              {/* Chat Interface */}
-              <div className="lg:col-span-2">
-                <ContentCard className="content-card">
-                  <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                    <FiMessageSquare aria-hidden="true" /> Messagerie
-                    {selectedUser && (
-                      <span className="text-lg font-normal text-gray-400 ml-2">
-                        - {selectedUser.firstName} {selectedUser.lastName}
-                      </span>
-                    )}
-                  </h2>
-                  
-                  {selectedUser ? (
-                    <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 h-[500px] flex flex-col">
-                      {/* Messages Container */}
-                      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                        {messages.length === 0 ? (
-                          <div className="text-center py-12">
-                            <p className="text-gray-400 text-lg flex items-center justify-center gap-2">
-                              <FiMessageSquare aria-hidden="true" /> Aucun message avec cet utilisateur
-                            </p>
-                            <p className="text-gray-500 text-sm mt-2">
-                              Envoyez votre premier message pour commencer la conversation
-                            </p>
-                          </div>
-                        ) : (
-                          messages
-                            .filter(message => message.userId === selectedUser.id)
-                            .map((message) => (
-                              <div
-                                key={message.id}
-                                className={`flex ${message.sender === 'ADMIN' ? 'justify-end' : 'justify-start'} admin-message-item`}
-                              >
-                                <div
-                                  className={`max-w-xs px-4 py-2 rounded-lg ${
-                                    message.sender === 'ADMIN'
-                                      ? 'bg-blue-600 text-white'
-                                      : 'bg-gray-600 text-white'
-                                  }`}
-                                >
-                                  <p className="text-sm">{message.content}</p>
-                                  <p className={`text-xs mt-1 ${
-                                    message.sender === 'ADMIN' ? 'text-blue-200' : 'text-gray-300'
-                                  }`}>
-                                    {new Date(message.createdAt).toLocaleTimeString('fr-FR', {
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
-                                  </p>
-                                </div>
-                              </div>
-                            ))
-                        )}
-                      </div>
-                      
-                      {/* Message Input */}
-                      <div className="border-t border-gray-700/50 p-4">
-                        {/* Template Selector */}
-                        <div className="mb-3">
-                          <button
-                            onClick={toggleTemplates}
-                            className="px-3 py-1 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                          >
-                            <FiEdit3 aria-hidden="true" /> Messages prédéfinis
-                            <svg 
-                              className={`w-4 h-4 transition-transform ${showTemplates ? 'rotate-180' : ''}`} 
-                              fill="none" 
-                              stroke="currentColor" 
-                              viewBox="0 0 24 24"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </button>
-                          
-                          {showTemplates && (
-                            <div className="mt-2 bg-gray-800/50 border border-gray-700/50 rounded-lg p-3 max-h-48 overflow-y-auto">
-                              <div className="grid grid-cols-1 gap-2">
-                                {messageTemplates.map((template) => (
-                                  <button
-                                    key={template.id}
-                                    onClick={() => {
-                                      setNewMessage(template.content);
-                                      setShowTemplates(false);
-                                    }}
-                                    className="text-left px-3 py-2 bg-gray-700/50 hover:bg-gray-700 rounded-lg transition-colors group"
-                                  >
-                                    <div className="font-medium text-white text-sm group-hover:text-purple-400">
-                                      {template.title}
-                                    </div>
-                                    <div className="text-xs text-gray-400 mt-1 line-clamp-2">
-                                      {template.content}
-                                    </div>
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                            placeholder={`Message à ${selectedUser.firstName}...`}
-                            className="flex-1 px-4 py-2 bg-gray-700/50 border border-gray-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400"
-                            disabled={isSendingMessage}
-                          />
-                          <button
-                            onClick={sendMessage}
-                            disabled={isSendingMessage || !newMessage.trim()}
-                            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                          >
-                            {isSendingMessage ? (
-                              <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                            ) : (
-                              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9 2zm0 0v-8" />
-                              </svg>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-12 text-center">
-                      <p className="text-gray-400 text-lg flex items-center justify-center gap-2">
-                        <FiUsers aria-hidden="true" /> Sélectionnez un utilisateur pour commencer à discuter
-                      </p>
-                    </div>
-                  )}
-                </ContentCard>
-              </div>
-            </div>
-          </>
-        );
+        return <MessagesPage openDossier={(userId, tab) => { setDossierInitialTab(tab || "profile"); const d = dossiers.find(x => x.userId === userId) || (dossiers.find(x => x.id === userId) || null); if (d) { setActiveMenu('dossier-detail'); setActiveDossierId(d.id); setSelectedDossier(d); } else { setActiveMenu('dossier-detail'); setActiveDossierId(userId); setSelectedDossier(null); } }} openPayments={() => setActiveMenu('payments')} />;
       case 'annonces':
-        return (
-          <ContentCard className="content-card">
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-              <FiBell aria-hidden="true" /> Gestion des Annonces
-            </h2>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Create New Announcement Form */}
-              <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  ✨ Créer une nouvelle annonce
-                </h3>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Titre de l'annonce
-                    </label>
-                    <input
-                      type="text"
-                      value={newAnnouncement.title}
-                      onChange={(e) => setNewAnnouncement({...newAnnouncement, title: e.target.value})}
-                      placeholder="Entrez le titre..."
-                      className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white placeholder-gray-400"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Contenu de l'annonce
-                    </label>
-                    <textarea
-                      value={newAnnouncement.content}
-                      onChange={(e) => setNewAnnouncement({...newAnnouncement, content: e.target.value})}
-                      placeholder="Entrez le contenu de l'annonce..."
-                      rows={4}
-                      className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white placeholder-gray-400 resize-none"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Type d'annonce
-                    </label>
-                    <select 
-                      value={newAnnouncement.type}
-                      onChange={(e) => setNewAnnouncement({...newAnnouncement, type: e.target.value})}
-                      className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
-                    >
-                      <option value="INFO"> Information</option>
-                      <option value="SUCCESS"> Succès</option>
-                      <option value="WARNING"> Avertissement</option>
-                      <option value="URGENT"> Urgent</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Destinataires (utilisateurs)
-                    </label>
-                    <div className="space-y-2">
-                      <div className="max-h-32 overflow-y-auto border border-gray-600/50 rounded-lg bg-gray-700/50 p-2">
-                        {allUsers.filter(u => u.role === 'USER').map((user) => (
-                          <label key={user.id} className="flex items-center space-x-2 text-white hover:bg-gray-600/50 p-2 rounded cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={newAnnouncement.selectedUsers.includes(user.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setNewAnnouncement({
-                                    ...newAnnouncement,
-                                    selectedUsers: [...newAnnouncement.selectedUsers, user.id]
-                                  });
-                                } else {
-                                  setNewAnnouncement({
-                                    ...newAnnouncement,
-                                    selectedUsers: newAnnouncement.selectedUsers.filter(id => id !== user.id)
-                                  });
-                                }
-                              }}
-                              className="w-4 h-4 text-purple-500 rounded focus:ring-purple-500 focus:ring-2"
-                            />
-                            <span className="flex-1">{user.firstName} {user.lastName}</span>
-                            <span className="text-xs text-gray-400">{user.email}</span>
-                          </label>
-                        ))}
-                      </div>
-                      <div className="flex items-center justify-between text-sm text-gray-400">
-                        <span>{newAnnouncement.selectedUsers.length} utilisateur(s) sélectionné(s)</span>
-                        <button
-                          type="button"
-                          onClick={() => setNewAnnouncement({
-                            ...newAnnouncement,
-                            selectedUsers: allUsers.filter(u => u.role === 'USER').map(u => u.id)
-                          })}
-                          className="text-purple-400 hover:text-purple-300 text-xs underline"
-                        >
-                          Tout sélectionner
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Lien (optionnel)
-                    </label>
-                    <input
-                      type="url"
-                      value={newAnnouncement.link}
-                      onChange={(e) => setNewAnnouncement({...newAnnouncement, link: e.target.value})}
-                      placeholder="https://example.com"
-                      className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white placeholder-gray-400"
-                    />
-                  </div>
-                </div>
-                
-                <button 
-                  onClick={createAnnouncement}
-                  disabled={isCreatingAnnouncement}
-                  className="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                >
-                  {isCreatingAnnouncement ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Publication en cours...
-                    </>
-                  ) : (
-                    <>
-                      <FiBell aria-hidden="true" /> Publier l'annonce
-                    </>
-                  )}
-                </button>
-              </div>
-              
-              {/* Existing Announcements */}
-              <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">
-                   Annonces existantes
-                </h3>
-                
-                {/* Edit Modal */}
-                {editingAnnouncement && (
-                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-gray-800 rounded-xl p-6 max-w-2xl w-full mx-4">
-                      <h3 className="text-lg font-semibold text-white mb-4">
-                         Modifier l'annonce
-                      </h3>
-                      
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Titre de l'annonce
-                          </label>
-                          <input
-                            type="text"
-                            value={editingAnnouncement.title}
-                            onChange={(e) => setEditingAnnouncement({...editingAnnouncement, title: e.target.value})}
-                            className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white placeholder-gray-400"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Contenu de l'annonce
-                          </label>
-                          <textarea
-                            value={editingAnnouncement.content}
-                            onChange={(e) => setEditingAnnouncement({...editingAnnouncement, content: e.target.value})}
-                            rows={4}
-                            className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white placeholder-gray-400 resize-none"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Type d'annonce
-                          </label>
-                          <select 
-                            value={editingAnnouncement.type}
-                            onChange={(e) => setEditingAnnouncement({...editingAnnouncement, type: e.target.value})}
-                            className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
-                          >
-                            <option value="INFO"> Information</option>
-                            <option value="SUCCESS"> Succès</option>
-                            <option value="WARNING"> Avertissement</option>
-                            <option value="URGENT"> Urgent</option>
-                          </select>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Lien (optionnel)
-                          </label>
-                          <input
-                            type="url"
-                            value={editingAnnouncement.link}
-                            onChange={(e) => setEditingAnnouncement({...editingAnnouncement, link: e.target.value})}
-                            placeholder="https://example.com"
-                            className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white placeholder-gray-400"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-2 mt-4">
-                        <button
-                          onClick={saveAnnouncement}
-                          className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
-                        >
-                           Enregistrer
-                        </button>
-                        <button
-                          onClick={() => setEditingAnnouncement(null)}
-                          className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
-                        >
-                           Annuler
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                <div className="space-y-4">
-                  {announcements.length === 0 ? (
-                    <div className="text-center py-16">
-                      <div className="inline-flex items-center gap-4 bg-gradient-to-r from-gray-100 to-gray-200 rounded-xl p-8">
-                        <span className="text-6xl text-gray-400 mb-3"></span>
-                        <span className="text-xl font-medium text-gray-600">Aucune annonce pour le moment</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {announcements.map((announcement, index) => (
-                        <div 
-                          key={announcement.id}
-                          className="bg-gray-800/50 rounded-xl border border-gray-700/50 p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:border-green-500"
-                        >
-                          <div className="flex justify-between items-start mb-4">
-                            <div className="flex-1">
-                              <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                                <span className="text-green-400"></span>
-                                <span className="text-white">{announcement.title}</span>
-                              </h3>
-                              <p className="text-gray-300 text-sm mb-4 leading-relaxed">{announcement.content}</p>
-                              {announcement.link && (
-                                <a 
-                                  href={announcement.link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-green-400 hover:text-green-300 transition-colors inline-flex items-center gap-2 mt-2"
-                                >
-                                   {announcement.link}
-                                </a>
-                              )}
-                            </div>
-                            <div className="flex gap-2 mt-4">
-                              <button
-                                onClick={() => updateAnnouncement(announcement)}
-                                className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-all duration-300 transform hover:scale-105"
-                              >
-                                 Modifier
-                              </button>
-                              <button
-                                onClick={() => deleteAnnouncement(announcement.id)}
-                                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all duration-300 transform hover:scale-105"
-                              >
-                                 Supprimer
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </ContentCard>
-        );
+        return <AlertsPage openDossier={(userId, tab) => { setDossierInitialTab(tab || "profile"); const d = dossiers.find(x => x.userId === userId) || (dossiers.find(x => x.id === userId) || null); if (d) { setActiveMenu('dossier-detail'); setActiveDossierId(d.id); setSelectedDossier(d); } else { setActiveMenu('dossier-detail'); setActiveDossierId(userId); setSelectedDossier(null); } }} openConversation={(userId) => { setActiveMenu('messagerie'); }} />;
       
       case 'users':
+        return <AdminUsers users={users} universityInfos={universityInfos} studyForms={studyForms} goTo={goTo} onApprove={(id) => handleUserAccess({ id, isApproved: false })} onRevoke={(id) => handleUserAccess({ id, isApproved: true })} />;
+
+      case 'users_legacy':
         return (
           <ContentCard className="content-card">
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
@@ -3269,392 +2817,21 @@ const menuItems = [
             </div>
           </ContentCard>
         );
-      
+
       case 'payments':
-        return (
-          <ContentCard className="content-card">
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-              <FiCreditCard aria-hidden="true" /> Gestion des Paiements
-            </h2>
-            
-            {/* Payment Statistics */}
-            {paymentStats && (
-              <div className="grid grid-cols-4 gap-4 mb-6">
-                <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-4 text-center">
-                  <div className="text-2xl mb-2"></div>
-                  <div className="text-2xl font-bold text-white">{paymentStats.totalPayments}</div>
-                  <div className="text-sm text-gray-400">Total Paiements</div>
-                </div>
-                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 text-center">
-                  <div className="text-2xl mb-2"></div>
-                  <div className="text-2xl font-bold text-green-400">{paymentStats.paidPayments}</div>
-                  <div className="text-sm text-gray-400">Payés</div>
-                </div>
-                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 text-center">
-                  <div className="text-2xl mb-2"></div>
-                  <div className="text-2xl font-bold text-yellow-400">{paymentStats.pendingPayments}</div>
-                  <div className="text-sm text-gray-400">En Attente</div>
-                </div>
-                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 text-center">
-                  <div className="text-2xl mb-2"></div>
-                  <div className="text-2xl font-bold text-blue-400">{paymentStats.totalRemaining.toFixed(2)} DT</div>
-                  <div className="text-sm text-gray-400">Reste à Payer</div>
-                </div>
-              </div>
-            )}
+        return <PaymentsPage />;
 
-            {/* Create Payment Button */}
-            <div className="mb-6">
-              <button
-                onClick={() => setShowCreatePaymentModal(true)}
-                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center gap-2"
-              >
-                ➕ Créer un Paiement
-              </button>
-            </div>
-
-            {/* Payments Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-white">
-                <thead>
-                  <tr className="border-b border-white/20">
-                    <th className="text-left p-4">Client</th>
-                    <th className="text-left p-4">Total</th>
-                    <th className="text-left p-4">Payé</th>
-                    <th className="text-left p-4">Reste</th>
-                    <th className="text-left p-4">Statut</th>
-                    <th className="text-left p-4">Date</th>
-                    <th className="text-left p-4">Accès dashboard</th>
-                    <th className="text-left p-4">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {payments.map((payment) => (
-                    <tr key={payment.id} className="border-b border-white/10 hover:bg-white/5">
-                      <td className="p-4">
-                        <div>
-                          <p className="font-medium">
-                            {payment.user?.firstName} {payment.user?.lastName}
-                          </p>
-                          <p className="text-sm text-gray-400">
-                            {payment.user?.email}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <span className="text-white font-medium">{payment.prixTotal} DT</span>
-                      </td>
-                      <td className="p-4">
-                        <span className="text-green-400 font-medium">{payment.prixPaye} DT</span>
-                      </td>
-                      <td className="p-4">
-                        <span className={`font-medium ${payment.prixReste > 0 ? 'text-yellow-400' : 'text-green-400'}`}>
-                          {payment.prixReste} DT
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          payment.status === 'PAID' 
-                            ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                            : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                        }`}>
-                          {payment.status === 'PAID' ? ' Payé' : ' En Attente'}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <p className="text-sm">
-                          {new Date(payment.createdAt).toLocaleDateString('fr-FR')}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {new Date(payment.createdAt).toLocaleTimeString('fr-FR', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex space-x-2">
-                          {payment.status === 'PENDING' && (
-                            <button
-                              onClick={() => {
-                                setSelectedPayment(payment);
-                                setShowAddPaymentModal(true);
-                              }}
-                              className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm transition-colors"
-                              title="Ajouter un paiement"
-                            >
-                              <FiCreditCard aria-hidden="true" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => setSelectedPayment(payment)}
-                            className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded text-sm transition-colors"
-                            title="Voir les détails"
-                          >
-                            
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              
-              {payments.length === 0 && (
-                <div className="text-center py-12">
-<p className="text-gray-400 text-lg flex items-center justify-center gap-2">
-                  <FiCreditCard aria-hidden="true" /> Aucun paiement trouvé
-                </p>
-                </div>
-              )}
-            </div>
-
-            {/* Add Payment Modal */}
-            {showAddPaymentModal && selectedPayment && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 w-96">
-                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <FiCreditCard aria-hidden="true" /> Ajouter un Paiement
-                  </h3>
-                  
-                  <div className="mb-4">
-                    <p className="text-gray-400 text-sm">
-                      Client: {selectedPayment.user?.firstName} {selectedPayment.user?.lastName}
-                    </p>
-                    <p className="text-gray-400 text-sm">
-                      Total: {selectedPayment.prixTotal} DT
-                    </p>
-                    <p className="text-gray-400 text-sm">
-                      Déjà payé: {selectedPayment.prixPaye} DT
-                    </p>
-                    <p className="text-yellow-400 text-sm font-medium">
-                      Reste à payer: {selectedPayment.prixReste} DT
-                    </p>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Montant à ajouter (DT)
-                    </label>
-                    <input
-                      type="number"
-                      value={addPaymentAmount}
-                      onChange={(e) => setAddPaymentAmount(e.target.value)}
-                      placeholder="Entrez le montant..."
-                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400"
-                      min="0"
-                      max={selectedPayment.prixReste}
-                      step="0.01"
-                    />
-                  </div>
-                  
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={handleAddPayment}
-                      disabled={!addPaymentAmount || parseFloat(addPaymentAmount) <= 0}
-                      className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-                    >
-                      Ajouter
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowAddPaymentModal(false);
-                        setAddPaymentAmount('');
-                        setSelectedPayment(null);
-                      }}
-                      className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
-                    >
-                      Annuler
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Payment Details Modal */}
-            {selectedPayment && !showAddPaymentModal && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 w-96">
-                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <FiCreditCard aria-hidden="true" /> Détails du Paiement
-                  </h3>
-                  
-                  <div className="space-y-3">
-                    <div>
-                      <span className="text-gray-400">Client:</span>
-                      <p className="text-white font-medium">
-                        {selectedPayment.user?.firstName} {selectedPayment.user?.lastName}
-                      </p>
-                      <p className="text-sm text-gray-400">{selectedPayment.user?.email}</p>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <span className="text-gray-400">Total:</span>
-                        <p className="text-white font-medium">{selectedPayment.prixTotal} DT</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-400">Payé:</span>
-                        <p className="text-green-400 font-medium">{selectedPayment.prixPaye} DT</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-400">Reste:</span>
-                        <p className={`font-medium ${selectedPayment.prixReste > 0 ? 'text-yellow-400' : 'text-green-400'}`}>
-                          {selectedPayment.prixReste} DT
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-gray-400">Statut:</span>
-                        <p className={`font-medium ${selectedPayment.status === 'PAID' ? 'text-green-400' : 'text-yellow-400'}`}>
-                          {selectedPayment.status === 'PAID' ? 'Payé' : 'En Attente'}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <span className="text-gray-400">Date de création:</span>
-                      <p className="text-white">
-                        {new Date(selectedPayment.createdAt).toLocaleDateString('fr-FR', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6">
-                    <button
-                      onClick={() => setSelectedPayment(null)}
-                      className="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
-                    >
-                      Fermer
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Create Payment Modal */}
-            {showCreatePaymentModal && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 w-96">
-                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <FiCreditCard aria-hidden="true" /> Créer un Paiement
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Client
-                      </label>
-                      <select
-                        value={newPayment.userId}
-                        onChange={(e) => setNewPayment({...newPayment, userId: e.target.value})}
-                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
-                      >
-                        <option value="">Sélectionner un client</option>
-                        {allUsers.filter(u => u.role === 'USER').map((user) => (
-                          <option key={user.id} value={user.id}>
-                            {user.firstName} {user.lastName} - {user.email}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Total (DT)
-                      </label>
-                      <input
-                        type="number"
-                        value={newPayment.prixTotal}
-                        onChange={(e) => setNewPayment({...newPayment, prixTotal: e.target.value})}
-                        placeholder="Entrez le montant total..."
-                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400"
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Montant payé (DT)
-                      </label>
-                      <input
-                        type="number"
-                        value={newPayment.prixPaye}
-                        onChange={(e) => setNewPayment({...newPayment, prixPaye: e.target.value})}
-                        placeholder="Entrez le montant payé..."
-                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400"
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Statut
-                      </label>
-                      <select
-                        value={newPayment.status}
-                        onChange={(e) => setNewPayment({...newPayment, status: e.target.value})}
-                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
-                      >
-                        <option value="PENDING">En Attente</option>
-                        <option value="PAID">Payé</option>
-                      </select>
-                    </div>
-                  </div>
-                  
-                  <div className="flex space-x-3 mt-6">
-                    <button
-                      onClick={handleCreatePayment}
-                      disabled={!newPayment.userId || !newPayment.prixTotal}
-                      className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-                    >
-                      Créer
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowCreatePaymentModal(false);
-                        setNewPayment({
-                          userId: '',
-                          prixTotal: '',
-                          prixPaye: '0',
-                          status: 'PENDING'
-                        });
-                      }}
-                      className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
-                    >
-                      Annuler
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </ContentCard>
-        );
-      
       case 'dossiers':
         return (
-          <ContentCard className="content-card">
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-              <FiFolder aria-hidden="true" /> Gestion des Dossiers
-            </h2>
-            <DossierKanban 
-              dossiers={dossiers} 
-              onDossierUpdate={(updatedDossier) => {
-                setDossiers(dossiers.map(dossier => 
-                  dossier.id === updatedDossier.id ? updatedDossier : dossier
-                ));
-                fetchDossierStats();
-              }}
-            />
-          </ContentCard>
+          <DossierList
+            dossiers={dossiers}
+            users={users}
+            onOpen={(id) => {
+              setDossierInitialTab("profile");
+              setActiveMenu('dossier-detail');
+              setActiveDossierId(id);
+            }}
+          />
         );
       
       default:
@@ -3664,87 +2841,18 @@ const menuItems = [
 
   useEffect(() => {
     // Animate sidebar
-    gsap.fromTo(sidebarRef.current, {
-      x: -100,
-      opacity: 0
-    }, {
-      x: 0,
-      opacity: 1,
-      duration: 1,
-      ease: "power3.out",
-      delay: 0.2
-    });
+    gsap.fromTo(sidebarRef.current, { x: -100, opacity: 0 }, { x: 0, opacity: 1, duration: 1, ease: "power3.out", delay: 0.2 });
 
     // Animate header
-    gsap.fromTo(headerRef.current, {
-      y: -50,
-      opacity: 0
-    }, {
-      y: 0,
-      opacity: 1,
-      duration: 1,
-      ease: "power3.out",
-      delay: 0.4
-    });
+    gsap.fromTo(headerRef.current, { y: -50, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power3.out", delay: 0.4 });
 
     // Animate content cards
-    gsap.fromTo('.content-card', {
-      y: 30,
-      opacity: 0
-    }, {
-      y: 0,
-      opacity: 1,
-      duration: 0.8,
-      ease: "power3.out",
-      stagger: 0.2,
-      delay: 0.6
-    });
+    gsap.fromTo('.content-card', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, ease: "power3.out", stagger: 0.2, delay: 0.6 });
 
     // Animate messaging interface
     if (activeMenu === 'messagerie') {
-      // Animate user list
-      gsap.fromTo('.user-item', {
-        x: -30,
-        opacity: 0,
-        scale: 0.8
-      }, {
-        x: 0,
-        opacity: 1,
-        scale: 1,
-        duration: 0.4,
-        ease: "back.out(1.7)",
-        stagger: 0.1,
-        delay: 1.0
-      });
-
-      // Animate message container
-      gsap.fromTo('#admin-messages-container', {
-        y: 30,
-        opacity: 0,
-        scale: 0.9
-      }, {
-        y: 0,
-        opacity: 1,
-        scale: 1,
-        duration: 0.6,
-        ease: "back.out(1.7)",
-        delay: 1.2
-      });
-
-      // Animate message items
-      gsap.fromTo('.admin-message-item', {
-        y: 20,
-        opacity: 0,
-        scale: 0.8
-      }, {
-        y: 0,
-        opacity: 1,
-        scale: 1,
-        duration: 0.4,
-        ease: "back.out(1.7)",
-        stagger: 0.1,
-        delay: 1.4
-      });
+      gsap.fromTo('.user-item', { x: -30, opacity: 0, scale: 0.8 }, { x: 0, opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.7)", stagger: 0.1, delay: 1.0 });
+      gsap.fromTo('.message-container', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out", delay: 1.2 });
     }
   }, [activeMenu]);
 
@@ -3754,65 +2862,36 @@ const menuItems = [
       <MobileOverlay $isOpen={sidebarOpen} onClick={toggleMobileSidebar} />
       
       {/* Sidebar */}
-      <Sidebar ref={sidebarRef} className="sidebar" $isOpen={sidebarOpen}>
-        {/* Mobile Controls */}
-        <SidebarControls>
-          <SidebarButton onClick={() => setSidebarOpen(false)}>
-            <FiX aria-hidden="true" /> Hide
-          </SidebarButton>
-          <SidebarButton onClick={() => setSidebarOpen(true)}>
-            <FiMenu aria-hidden="true" /> Show
-          </SidebarButton>
-        </SidebarControls>
-        
-        <div className="px-4 mb-8">
-          <h3 className="text-white font-bold text-lg mb-2">
-            Via Italia Admin
-          </h3>
-          <p className="text-gray-400 text-sm">
-            Panneau d'administration
-          </p>
-        </div>
-        
-        {menuItems.map((item) => (
-          <SidebarItem
-            key={item.id}
-            className={activeMenu === item.id ? 'active' : ''}
-            onClick={() => handleMobileMenuClick(item.id)}
-          >
-            <item.icon className="icon" aria-hidden="true" focusable="false" />
-            <span className="text">{item.text}</span>
-          </SidebarItem>
-        ))}
-      </Sidebar>
+      <AdminSidebar
+        activeMenu={activeMenu}
+        onSelect={handleMobileMenuClick}
+        user={user}
+        onLogout={handleLogout}
+        open={sidebarOpen}
+        counts={{ messagerie: messages.length || 3, annonces: announcements?.filter(a => a.isActive).length || 1 }}
+      />
 
       <MainContent>
-        <Header ref={headerRef}>
-          <HeaderLeft>
-            {/* Hamburger Menu - Mobile Only */}
-            <HamburgerButton onClick={toggleMobileSidebar} aria-label="Ouvrir le menu">
-              <FiMenu aria-hidden="true" />
-            </HamburgerButton>
-            <h1 className="text-2xl font-bold text-white">
-              {activeMenu === 'receipts' ? 'Receipts' : 'Tableau de Bord Administrateur'}
-            </h1>
-          </HeaderLeft>
-          
-          <HeaderRight>
-            <ThemeToggle
-              type="button"
-              onClick={toggleTheme}
-              aria-label={theme === 'dark' ? 'Activer le mode clair' : 'Activer le mode sombre'}
-              title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
-            >
-              {theme === 'dark' ? <FiSun aria-hidden="true" /> : <FiMoon aria-hidden="true" />}
-              <span>{theme === 'dark' ? 'Mode clair' : 'Mode sombre'}</span>
-            </ThemeToggle>
-            <LogoutButton onClick={handleLogout}>
-              Déconnexion
-            </LogoutButton>
-          </HeaderRight>
-        </Header>
+        <AdminHeaderCard
+          activeMenu={activeMenu}
+          theme={theme}
+          toggleTheme={toggleTheme}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={toggleMobileSidebar}
+          onInvite={() => setShowInvite(true)}
+          notifications={announcements?.filter(a => a.isActive).length || 0}
+        />
+
+        <InviteStudentModal
+          open={showInvite}
+          onClose={() => setShowInvite(false)}
+          onStudentCreated={created => {
+            if (created) {
+              fetchUsers();
+              fetchAllUsers();
+            }
+          }}
+        />
 
         <ContentArea ref={contentRef}>
           {renderContent()}
@@ -3836,5 +2915,11 @@ const menuItems = [
   );
 };
 
-export default AdminDashboard;
+export default function AdminDashboard() {
+  return (
+    <OfficeProvider>
+      <AdminDashboardInner />
+    </OfficeProvider>
+  );
+}
 

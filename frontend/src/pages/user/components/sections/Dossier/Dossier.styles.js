@@ -272,12 +272,12 @@ export const StepCircle = styled.div`
       default:
         return css`
           background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
-          opacity: ${props.locked ? '0.5' : '1'};
-          cursor: ${props.locked ? 'not-allowed' : 'default'};
+          opacity: ${props['data-locked'] === 'true' ? '0.5' : '1'};
+          cursor: ${props['data-locked'] === 'true' ? 'not-allowed' : 'default'};
           box-shadow: 0 15px 40px rgba(107, 114, 128, 0.2);
-          
+
           &:hover {
-            ${!props.locked ? css`
+            ${!props['data-locked'] ? css`
               transform: translateY(-4px) scale(1.05);
               box-shadow: 0 20px 50px rgba(107, 114, 128, 0.3);
             ` : ''}
@@ -614,14 +614,14 @@ export const StepCard = styled.div`
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   padding: 1.5rem;
-  cursor: ${props => props.locked ? 'not-allowed' : 'pointer'};
+  cursor: ${props => props['data-locked'] === 'true' ? 'not-allowed' : 'pointer'};
   transition: all 0.3s ease;
   animation: ${css`${slideUp} 0.6s ease-out`};
   animation-delay: ${props => props.delay || 0}s;
   animation-fill-mode: both;
   
   ${props => {
-    if (props.locked) {
+    if (props['data-locked'] === 'true') {
       return css`
         opacity: 0.6;
         border-color: rgba(251, 191, 36, 0.3);

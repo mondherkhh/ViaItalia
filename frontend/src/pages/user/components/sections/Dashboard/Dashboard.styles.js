@@ -19,7 +19,7 @@ export const DashboardContainer = styled.div`
   min-height: calc(100vh - 200px);
   animation: ${fadeUp} 0.5s ease both;
 
-  @media (max-width: 768px) { padding: 80rem 1rem; }
+  @media (max-width: 768px) { padding: 1rem 1rem; }
 `;
 
 /* ─── Header ───────────────────────────────────────────────── */
@@ -102,49 +102,18 @@ export const WelcomeSubtext = styled.p`
 
 export const SectionGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: auto auto;
-  grid-template-areas:
-    "annonces annonces paiement"
-    "messages contrat  paiement";
+  grid-template-columns: 1fr 1fr;
   gap: 1.25rem;
   margin-bottom: 2rem;
 
   @media (max-width: 768px) {
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-      "annonces annonces"
-      "paiement paiement"
-      "messages contrat";
-  }
-
-  @media (max-width: 480px) {
     grid-template-columns: 1fr;
-    grid-template-areas:
-      "annonces"
-      "paiement"
-      "messages"
-      "contrat";
   }
 `;
 
 /* Each card gets its area name */
-export const CardAnnonces = styled(SectionCard)`
-  grid-area: annonces;
-`;
-
 export const CardPaiement = styled(SectionCard)`
-  grid-area: paiement;
-  /* stretch to fill both rows — height matches Annonces+gap+Messages/Contrat */
-  align-self: stretch;
-`;
-
-export const CardMessages = styled(SectionCard)`
-  grid-area: messages;
-`;
-
-export const CardContrat = styled(SectionCard)`
-  grid-area: contrat;
+  grid-area: auto;
 `;
 
 export const SectionCard = styled.div`
@@ -197,11 +166,12 @@ export const SectionIcon = styled.div`
 `;
 
 export const SectionTitle = styled.h3`
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #ffffff;
-  margin: 0 0 0.4rem;
-  letter-spacing: -0.01em;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--adm-muted, #7A8780);
+  margin: 0 0 0.6rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
 `;
 
 export const SectionDescription = styled.p`

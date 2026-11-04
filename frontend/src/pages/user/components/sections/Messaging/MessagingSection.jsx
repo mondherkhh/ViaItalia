@@ -181,30 +181,26 @@ const MessagingSection = () => {
 
   const renderMessage = (message, index) => {
     const isOwn = message.sender === 'USER';
-    
+    const isAdmin = message.sender === 'ADMIN';
+
     return (
       <MessageItem key={message.id} isOwn={isOwn}>
-        <MessageBubble isOwn={isOwn}>
-          {message.content}
-          {message.fileName && (
-            <div style={{ 
-              marginTop: '0.5rem', 
-              padding: '0.5rem', 
-              background: 'rgba(255,255,255,0.1)', 
-              borderRadius: '8px',
-              fontSize: '0.8rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              <FiPaperclip size={16} aria-hidden="true" /> {message.fileName}
-              {message.fileSize && (
-                <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>
-                  ({(message.fileSize / 1024 / 1024).toFixed(2)} MB)
-                </span>
-              )}
-            </div>
+        <MessageBubble isOwn={isOwn} isDarkMode={isDarkMode} isAdmin={isAdmin}>
+          {!isOwn && (
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: isDarkMode ? '#ccc' : '#4A5248', marginBottom: 4, letterSpacing: 0.2 }}>{isAdmin ? 'Support Viatalia' : (message.user?.firstName || '') + ' ' + (message.user?.lastName || '')}</div>
           )}
+          {message.content ? (
+            <span style={{ color: isOwn ? '#fff' : (isDarkMode ? '#fff' : '#12231B') }}>{message.content}</span>
+          ) : message.fileName ? (
+            <div style={{ marginTop: '0.25rem', padding: '0.5rem', background: isOwn ? 'rgba(255,255,255,0.1)' : (isDarkMode ? '#444' : '#F0F2F5'), borderRadius: 8, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <FiPaperclip size={16} aria-hidden="true" />
+              <a href={`/api/messages/${message.id}/download`} style={{ color: isOwn ? '#fff' : '#047857', textDecoration: 'underline', fontWeight: 600 }} download={message.fileName}>{message.fileName}</a>
+              {message.fileSize && <span style={{ fontSize: '0.7rem', opacity: 0.8, color: isOwn ? '#ccc' : '#7C877F' }}>({(message.fileSize / 1024 / 1024).toFixed(2)} MB)</span>}
+            </div>
+          ) : null}
+          <div style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: 6, textAlign: isOwn ? 'right' : 'left' }}>
+            {new Date(message.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+          </div>
         </MessageBubble>
         {isOwn && (
           <MessageStatus isOwn={isOwn}>

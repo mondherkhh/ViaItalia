@@ -117,7 +117,7 @@ const ContentArea = ({
         )}
         
         <ContentBody>
-          <ContentTransition isTransitioning={isTransitioning}>
+          <ContentTransition $isTransitioning={isTransitioning}>
             {renderContent()}
           </ContentTransition>
         </ContentBody>

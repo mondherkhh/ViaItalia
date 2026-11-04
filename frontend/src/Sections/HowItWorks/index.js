@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import styled from "styled-components";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -7,57 +7,70 @@ import { useLanguage } from "../../contexts/LanguageContext";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const CARD_THEMES = [
-  {
-    cardColor: "#1A2030",
-    darkColor: "#17221e",
-    accentColor: "#57D53B",
-    imageUrl: "https://images.unsplash.com/photo-1722573783625-eceb04251036?w=1200&q=85&auto=format&fit=crop",
-  },
-  {
-    cardColor: "#1A2030",
-    darkColor: "#202033",
-    accentColor: "#C9343E",
-    imageUrl: "https://images.unsplash.com/photo-1654172501173-1d20f2fad942?w=1200&q=85&auto=format&fit=crop",
-  },
-  {
-    cardColor: "#1A2030",
-    darkColor: "#202033",
-    accentColor: "#d99145",
-    imageUrl: "https://images.unsplash.com/photo-1592066575517-58df903152f2?w=1200&q=85&auto=format&fit=crop",
-  },
-  {
-    cardColor: "#1A2030",
-    darkColor: "#202033",
-    accentColor: "#4aa9a0",
-    imageUrl: "https://images.unsplash.com/photo-1504817343863-5092a923803e?w=1200&q=85&auto=format&fit=crop",
-  },
-];
-
-const HowItWorksSection = styled.section`
+const TimelineWrapper = styled.div`
   position: relative;
-  overflow: visible;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  min-height: 1000px;
+
+  .timeline-svg {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    height: 100%;
+  }
+
+  .step-number {
+    color: #57D53B;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .step h3 {
+    color: var(--text-primary);
+    font-size: 22px;
+    font-weight: 700;
+    margin: 4px 0;
+  }
+
+  .step p {
+    color: var(--text-secondary);
+    font-size: 15px;
+    max-width: 320px;
+  }
+`;
+
+const Section = styled.section`
+  position: relative;
   color: var(--text-primary);
   background: var(--background);
+  padding: 5rem 5%;
   transition: background 220ms ease, color 220ms ease;
 `;
 
-const Intro = styled.div`
+const Inner = styled.div`
   position: relative;
-  z-index: 2;
-  max-width: 720px;
+  max-width: 1100px;
+  width: 100%;
   margin: 0 auto;
-  padding: clamp(5rem, 10vw, 8rem) 1.25rem 2rem;
-  text-align: center;
 `;
 
+const Header = styled.header`
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  margin-bottom: 3.5rem;
+`;
 
 const Badge = styled.div`
   display: inline-flex;
   align-items: center;
   min-height: 2rem;
-  padding: 0.4rem 1rem;
-  color: var(--accent);
+  padding: 0.4rem 1.2rem;
+  color: #57D53B;
   background: rgba(87, 213, 59, 0.12);
   border: 1px solid rgba(87, 213, 59, 0.28);
   border-radius: 999px;
@@ -65,401 +78,110 @@ const Badge = styled.div`
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  margin-bottom: 1.2rem;
 `;
 
 const Title = styled.h1`
-  margin: 1.2rem 0 0;
-  font-family: 'Poppins', 'Inter', sans-serif;
-  font-weight: 900;
-  line-height: 1.05;
-  color: var(--text-primary);
-  font-size: var(--font-size-h1);
+  margin: 0;
+  font-family: "Poppins", "Inter", sans-serif;
   font-weight: 900;
   line-height: 1.04;
+  color: var(--text-primary);
+  font-size: clamp(2rem, 4vw, 3rem);
   letter-spacing: -0.055em;
-
-  span {
-    color: var(--accent);
-  }
+  span { color: #57D53B; }
 `;
 
 const Subtitle = styled.p`
   max-width: 620px;
   margin: 1.2rem auto 0;
-  font-family: 'Poppins', 'Inter', sans-serif;
-  font-weight: 400;
   color: var(--text-secondary);
   font-size: clamp(0.95rem, 1.8vw, 1.1rem);
   line-height: 1.7;
 `;
 
-/* هذه المساحة هي التي تجبر الصفحة على المرور عبر المراحل الأربع. */
-const DeckScrollArea = styled.div`
-  position: relative;
-  height: var(--deck-height, 520vh);
-`;
-
-const DeckSticky = styled.div`
-  position: sticky;
-  top: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100vh;
-  min-height: 600px;
-  padding: 2rem 1rem;
-`;
-
-const DeckFrame = styled.div`
-  position: relative;
-  width: min(520px, calc(100vw - 2rem));
-  height: min(360px, 58vh);
-  min-height: 300px;
-  perspective: 1400px;
-`;
-
-const DeckCard = styled.article`
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: clamp(1.25rem, 4vw, 2rem);
-  color: var(--text-primary);
-  background: ${({ $cardColor }) => $cardColor};
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 24px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
-  transform: translateY(${({ $index }) => $index * 24}px)
-    scale(${({ $index }) => 1 - $index * 0.035})
-    rotate(${({ $index }) => ($index % 2 === 0 ? -1.2 : 1.2)}deg);
-  transform-origin: center bottom;
-  will-change: transform, opacity;
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 65%;
-    z-index: 0;
-    background-image: url("${({ $imageUrl }) => $imageUrl}");
-    background-position: center;
-    background-size: cover;
-    object-fit: cover;
-    object-position: center 25%;
-    opacity: 1;
-    pointer-events: none;
-  }
-
-  @media (max-width: 768px) {
-    &::before {
-      height: 75%;
-    }
-  }
-
-  @media (max-width: 480px) {
-    &::before {
-      height: 85%;
-    }
-  }
-
-  &::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 5px;
-    background: ${({ $accentColor }) => $accentColor};
-    transform: scaleX(0.35);
-    transform-origin: left;
-  }
-`;
-
-const CardTop = styled.div`
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-`;
-
-const CardIcon = styled.div`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 3.1rem;
-  height: 3.1rem;
-  color: ${({ $accentColor }) => $accentColor};
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
-
-  svg {
-    width: 1.65rem;
-    height: 1.65rem;
-    fill: none;
-    stroke: currentColor;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 1.8;
-  }
-`;
-
-const StepNumber = styled.span`
-  color: ${({ $accentColor }) => $accentColor};
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: clamp(2.2rem, 5vw, 3.8rem);
-  font-weight: 800;
-  line-height: 0.9;
-  letter-spacing: -0.08em;
-  opacity: 0.72;
-`;
-
-const CardBody = styled.div`
-  position: relative;
-  z-index: 1;
-  background: var(--background-secondary, #1A2030);
-  margin: 0 -2rem -2rem -2rem;
-  padding: 1.1rem 1.25rem 1rem;
-  border-radius: 0 0 24px 24px;
-  border-top: 1px solid rgba(255,255,255,0.08);
-`;
-
-const CardTitle = styled.h2`
-  margin: 0 0 0.75rem;
-  color: inherit;
-  font-size: clamp(1.3rem, 3vw, 1.85rem);
-`;
-
-const CardDesc = styled.p`
-  max-width: 440px;
-  margin: 0;
-  color: inherit;
-  font-size: clamp(0.84rem, 1.6vw, 0.98rem);
-  line-height: 1.65;
-`;
-
-const Highlight = styled.span`
-  position: relative;
-  z-index: 1;
-  align-self: flex-start;
-  display: inline-flex;
-  width: fit-content;
-  padding: 0.38rem 0.8rem;
-  color: ${({ $accentColor }) => $accentColor};
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid ${({ $accentColor }) => `${$accentColor}55`};
-  border-radius: 999px;
-  font-size: 0.74rem;
-  font-weight: 700;
-
-  body.theme-dark &,
-  :root[data-theme="dark"] & {
-    background: rgba(255, 255, 255, 0.09);
-  }
-`;
-
-const ScrollLabel = styled.div`
-  position: absolute;
-  bottom: 1.8rem;
-  left: 50%;
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  color: var(--text-secondary);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  transform: translateX(-50%);
-
-  &::before {
-    content: "";
-    display: block;
-    width: 1.8rem;
-    height: 1px;
-    background: currentColor;
-    opacity: 0.55;
-  }
-
-  body.theme-dark &,
-  :root[data-theme="dark"] & {
-    color: var(--text-secondary);
-  }
-`;
-
-const StepIcon = ({ index }) => {
-  const icons = [
-    <>
-      <circle cx="12" cy="12" r="8" />
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-    </>,
-    <>
-      <path d="M6 3h9l3 3v15H6z" />
-      <path d="M15 3v4h4M9 12h6M9 16h6" />
-    </>,
-    <>
-      <path d="M3 9.5 12 4l9 5.5-9 5.5z" />
-      <path d="M6 12.5V17c3 2 9 2 12 0v-4.5M21 10v6" />
-    </>,
-    <>
-      <path d="M3 12h12" />
-      <path d="m11 7 5 5-5 5" />
-      <path d="M18 5h3v14h-3" />
-    </>,
-  ];
-
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      {icons[index % icons.length]}
-    </svg>
-  );
-};
-
-const ModernJourneyPage = () => {
+export default function HowItWorks() {
   const { language } = useLanguage();
   const t = translations[language].howItWorks;
   const sectionRef = useRef(null);
-  const deckRef = useRef(null);
-  const cardsRef = useRef([]);
-
-  const steps = t.steps || [];
-  const visibleSteps = steps.slice(0, 4);
-  const deckHeight = `${Math.max(480, (visibleSteps.length - 1) * 145 + 120)}vh`;
+  const pathRef = useRef(null);
 
   useEffect(() => {
-    const context = gsap.context(() => {
-      const cards = cardsRef.current.filter(Boolean);
-      if (!cards.length || !deckRef.current) return;
+    if (!pathRef.current || !sectionRef.current) return;
+    const path = pathRef.current;
 
-      cards.forEach((card, index) => {
-        gsap.set(card, {
-          x: 0,
-          y: index * 24,
-          scale: 1 - index * 0.035,
-          rotation: index % 2 === 0 ? -1.2 : 1.2,
-          opacity: 1,
-          zIndex: cards.length - index,
-        });
-      });
+    const len = path.getTotalLength ? path.getTotalLength() : 1000;
+    path.style.strokeDasharray = len;
+    path.style.strokeDashoffset = len;
 
-      const timeline = gsap.timeline({
-        defaults: { ease: "none" },
+    const ctx = gsap.context(() => {
+      gsap.to(path, {
+        strokeDashoffset: 0,
+        duration: 1.2,
+        ease: "power2.inOut",
         scrollTrigger: {
-          trigger: deckRef.current,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 0.8,
-          snap:
-            cards.length > 1
-              ? {
-                  snapTo: 1 / (cards.length - 1),
-                  duration: { min: 0.25, max: 0.7 },
-                  delay: 0.08,
-                  ease: "power2.out",
-                }
-              : false,
-          invalidateOnRefresh: true,
+          trigger: sectionRef.current,
+          start: "top 70%",
+          end: "bottom 15%",
+          scrub: 1.2,
         },
       });
-
-      cards.forEach((card, index) => {
-        if (index === cards.length - 1) return;
-        const nextCard = cards[index + 1];
-
-        timeline.to(
-          card,
-          {
-            y: -560,
-            x: index % 2 === 0 ? -95 : 95,
-            rotation: index % 2 === 0 ? -10 : 10,
-            scale: 0.84,
-            opacity: 0.12,
-            duration: 1,
-          },
-          index
-        );
-
-        timeline.to(
-          nextCard,
-          {
-            y: 0,
-            x: 0,
-            rotation: 0,
-            scale: 1,
-            zIndex: cards.length + index,
-            duration: 1,
-          },
-          index
-        );
-      });
-
-      ScrollTrigger.refresh();
     }, sectionRef);
 
-    return () => context.revert();
-  }, [language, visibleSteps.length]);
+    return () => ctx.revert();
+  }, [language]);
 
   return (
-    <HowItWorksSection id="how-it-works" ref={sectionRef}>
-      <Intro>
-        <Badge>{t.eyebrow}</Badge>
-        <Title>
-          {t.titleStart} <span>{t.titleHighlight}</span>
-        </Title>
-        <Subtitle>{t.subtitle}</Subtitle>
-      </Intro>
+    <Section id="how-it-works" ref={sectionRef}>
+      <Inner>
+        <Header>
+          <Badge>{t.eyebrow}</Badge>
+          <Title>
+            {t.titleStart} <span>{t.titleHighlight}</span>
+          </Title>
+          <Subtitle>{t.subtitle}</Subtitle>
+        </Header>
 
-      <DeckScrollArea ref={deckRef} style={{ height: deckHeight }}>
-        <DeckSticky>
-          <DeckFrame>
-            {visibleSteps.map((step, index) => {
-              const theme = CARD_THEMES[index % CARD_THEMES.length];
-              return (
-                <DeckCard
-                  key={`${step.number || index}-${step.title}`}
-                  ref={(element) => {
-                    cardsRef.current[index] = element;
-                  }}
-                  $index={index}
-                  $cardColor={theme.cardColor}
-                  $darkColor={theme.darkColor}
-                  $accentColor={theme.accentColor}
-                  $imageUrl={theme.imageUrl}
-                  $textColor={theme.textColor}
-                >
-                  <CardTop>
-                    <div>
-                      <CardIcon $accentColor={theme.accentColor}>
-                        <StepIcon index={index} />
-                      </CardIcon>
-                      <StepNumber $accentColor={theme.accentColor}>
-                        {step.number || String(index + 1).padStart(2, "0")}
-                      </StepNumber>
-                    </div>
-                    <Highlight $accentColor={theme.accentColor}>{step.badge}</Highlight>
-                  </CardTop>
+        <TimelineWrapper>
+          <svg
+            viewBox="0 0 400 1000"
+            preserveAspectRatio="none"
+            className="timeline-svg"
+          >
+            <defs>
+              <marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M1 1L9 5L1 9" fill="none" stroke="#57D53B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </marker>
+            </defs>
+            <path
+              ref={pathRef}
+              d="M 350,50 C 350,150 50,150 50,280 C 50,410 350,410 350,540 C 350,670 50,670 50,800 C 50,930 350,930 350,950"
+              fill="none"
+              stroke="#57D53B"
+              strokeWidth="2"
+              strokeDasharray="4 4"
+              marker-end="url(#arrowhead)"
+            />
+          </svg>
 
-                  <CardBody>
-                    <CardTitle style={{color:"var(--text-primary)"}}>{step.title}</CardTitle>
-                    <CardDesc style={{color:"var(--text-secondary)"}}>{step.desc}</CardDesc>
-                  </CardBody>
-                </DeckCard>
-              );
-            })}
-          </DeckFrame>
-          <ScrollLabel>Scroll to explore</ScrollLabel>
-        </DeckSticky>
-      </DeckScrollArea>
-    </HowItWorksSection>
+        {t.steps.map((step, i) => {
+          const positions = [
+            { top: "5%", right: "55%", textAlign: "right" },
+            { top: "28%", left: "55%", textAlign: "left" },
+            { top: "54%", right: "55%", textAlign: "right" },
+            { top: "80%", left: "55%", textAlign: "left" },
+          ];
+          const pos = positions[i];
+          return (
+            <div key={step.number} className="step" style={{ position: "absolute", ...pos }}>
+              <span className="step-number">{step.number}</span>
+              <h3>{step.title}</h3>
+              <p>{step.desc}</p>
+            </div>
+          );
+        })}
+        </TimelineWrapper>
+      </Inner>
+    </Section>
   );
-};
-
-export default ModernJourneyPage;
-
+}

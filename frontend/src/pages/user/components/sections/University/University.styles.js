@@ -20,9 +20,8 @@ export const UniversityForm = styled.div`
 `;
 
 export const UniversityCard = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255,255,255,0.85);
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 1.5rem;
   text-align: center;
@@ -63,7 +62,7 @@ export const UniversityIcon = styled.div`
 export const UniversityTitle = styled.h3`
   font-size: 1.125rem;
   font-weight: 600;
-  color: white;
+  color: #111827;
   margin: 0 0 1rem 0;
   
   @media (max-width: 768px) {
@@ -75,10 +74,10 @@ export const UniversityTitle = styled.h3`
 export const UniversitySelect = styled.select`
   width: 100%;
   padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  color: white;
+  color: #111827;
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -100,8 +99,8 @@ export const UniversitySelect = styled.select`
   }
   
   option {
-    background: #1f2937;
-    color: white;
+    background: #fff;
+    color: #111827;
   }
   
   @media (max-width: 768px) {
@@ -111,9 +110,8 @@ export const UniversitySelect = styled.select`
 `;
 
 export const UniversitySummary = styled.div`
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 1.5rem;
   animation: slideUp 0.5s ease 0.2s both;
@@ -137,7 +135,7 @@ export const UniversitySummary = styled.div`
 export const SummaryTitle = styled.h3`
   font-size: 1.25rem;
   font-weight: 600;
-  color: white;
+  color: #111827;
   margin: 0 0 1.5rem 0;
   
   @media (max-width: 768px) {
@@ -186,7 +184,7 @@ export const SummaryIcon = styled.div`
 
 export const SummaryLabel = styled.p`
   font-size: 0.9rem;
-  color: #10b981;
+  color: #374151;
   font-weight: 500;
   margin: 0;
   text-transform: capitalize;

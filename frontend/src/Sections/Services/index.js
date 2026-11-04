@@ -52,7 +52,7 @@ const ServiceSection = styled.section`
 `;
 
 const Header = styled.div`
-  text-align: center;
+  text-align: left;
   margin-bottom: 4rem;
   opacity: 0;
 `;
@@ -87,7 +87,7 @@ const Subtitle = styled.p`
   font-size: 1rem;
   color: var(--text-muted);
   max-width: 500px;
-  margin: 0 auto;
+  margin: 0;
   line-height: 1.7;
 `;
 
@@ -107,58 +107,44 @@ const Card = styled.div`
   background: var(--surface);
   border: 2px solid var(--border-visible);
   border-radius: 10px;
-  padding: 1.35rem 1.45rem;
+  padding: 1rem 1.1rem;
   box-shadow: 5px 5px 0 rgba(32,33,36,0.14);
   cursor: pointer;
   opacity: 0;
   overflow: hidden;
   transition: border-color 0.3s ease, background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: -2px; left: 18px; right: 18px;
-    height: 4px;
-    background: ${p => p.$accent || '#138A5B'};
-    opacity: 1;
-    transition: opacity 0.3s ease;
-    border-radius: 0 0 5px 5px;
-  }
-
   &:hover {
     border-color: var(--text);
     background: var(--surface);
     transform: translate(-2px, -2px);
     box-shadow: 9px 9px 0 rgba(23,23,23,0.18);
-
-    &::before { opacity: 1; }
   }
 `;
 
 const IconBox = styled.div`
   width: 46px;
   height: 46px;
-  border-radius: 50%;
-  background: var(--surface);
-  border: 2px solid var(--border-visible);
+  border-radius: 12px;
+  background: rgba(87,213,59,0.12);
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 0.9rem;
-  box-shadow: 3px 3px 0 var(--accent);
+  margin-bottom: 0.75rem;
   transition: transform 0.3s ease;
 
   svg {
-    width: 19px;
-    height: 19px;
+    width: 20px;
+    height: 20px;
     stroke-width: 2.1;
-    color: var(--text);
+    color: #57D53B;
     transition: transform 0.3s ease;
   }
 
   ${Card}:hover & {
-    transform: scale(1.06) rotate(-3deg);
-    svg { transform: scale(1.08); }
+    transform: scale(1.04);
+    svg { transform: scale(1.06); }
   }
 `;
 
@@ -203,15 +189,6 @@ const Feature = styled.li`
   }
 `;
 
-const CardNumber = styled.span`
-  position: absolute;
-  bottom: 0.85rem;
-  right: 1.05rem;
-  font-size: 0.65rem;
-  font-family: var(--font-main);
-  letter-spacing: 0.1em;
-  color: rgba(32,33,36,0.30);
-`;
 
 const Frame = styled.div`
   border: 1px solid rgba(255,255,255,0.08);
@@ -283,7 +260,6 @@ const Services = () => {
                 <Feature key={j} $accent={SERVICE_ACCENTS[i]}>{f}</Feature>
               ))}
             </FeatureList>
-            <CardNumber>{s.number}</CardNumber>
           </Card>
         ))}
       </Grid>

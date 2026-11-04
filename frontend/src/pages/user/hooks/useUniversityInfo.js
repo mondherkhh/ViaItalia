@@ -15,8 +15,8 @@ export const useUniversityInfo = (userId) => {
     if (!userId) return;
     
     try {
-      const response = await universityService.getUniversityByUserId(userId);
-      if (response.success && response.data) {
+      const response = await universityService.getUniversityInfoByUserId(userId);
+      if (response?.success && response.data) {
         setUniversityInfo({
           university: response.data.university || '',
           specialty: response.data.specialty || '',
@@ -37,7 +37,7 @@ export const useUniversityInfo = (userId) => {
     setError(null);
     
     try {
-      const response = await universityService.saveUniversityInfo({
+      const response = await universityService.createUniversityInfo({
         ...data,
         userId
       });

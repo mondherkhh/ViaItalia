@@ -11,37 +11,27 @@ export const usePayments = (userId) => {
   // Fetch all payments for a user
   const fetchPayments = async () => {
     if (!userId) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
-    console.log('=== FETCHING PAYMENTS FOR USER:', userId);
-    
+
     try {
-      const response = await axiosInstance.get(`/payments/users/${userId}/payments`);
-      console.log('Payments API response:', response);
-      console.log('Response data:', response.data);
-      console.log('Response status:', response.status);
+      const response = await axiosInstance.get(`/my-payments`);
       
       if (response.data.success) {
         const paymentsData = response.data.data || [];
         setPayments(paymentsData);
-        console.log('✅ Payments fetched successfully:', paymentsData);
-        
-        // If no payments found, don't set an error - this is normal
+
         if (paymentsData.length === 0) {
-          console.log('ℹ️ No payments found for user:', userId);
+          // normal empty state
         }
       } else {
-        console.log('❌ API returned success=false:', response.data.message);
         setError(response.data.message || 'Erreur lors de la récupération des paiements');
       }
     } catch (err) {
-      console.error('❌ Error fetching payments:', err);
-      console.error('Error status:', err.response?.status);
-      console.error('Error data:', err.response?.data);
-      console.error('Error config:', err.config);
-      setError('Erreur lors de la récupération des paiements');
+      console.error('Error fetching payments: code=', err?.response?.status, 'url=', err?.config?.url, 'msg=', err?.message, 'server=', err?.response?.data?.message);
+      const msg = err?.response?.data?.message || err?.message || 'Erreur lors de la récupération des paiements';
+      setError(msg);
       setPayments([]);
     } finally {
       setIsLoading(false);
@@ -51,46 +41,28 @@ export const usePayments = (userId) => {
   // Fetch latest payment for a user
   const fetchLatestPayment = async () => {
     if (!userId) return;
-    
-    console.log('=== FETCHING LATEST PAYMENT FOR USER:', userId);
-    
+
     try {
-      const response = await axiosInstance.get(`/payments/users/${userId}/payments`);
-      console.log('Latest payment API response:', response);
-      console.log('Latest payment response data:', response.data);
-      console.log('Latest payment response status:', response.status);
-      
+      const response = await axiosInstance.get(`/my-payments`);
+
       if (response.data.success && response.data.data && response.data.data.length > 0) {
         const latestPayment = response.data.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
         setPayment(latestPayment);
-        console.log('✅ Latest payment fetched successfully:', latestPayment);
         return latestPayment;
       }
-      console.log('ℹ️ No payments found for user:', userId);
       setPayment(null);
       return null;
     } catch (err) {
-      console.error('❌ Error fetching latest payment:', err);
-      console.error('Latest payment error status:', err.response?.status);
-      console.error('Latest payment error data:', err.response?.data);
-      console.error('Latest payment error config:', err.config);
+      console.error('Error fetching latest payment:', err);
       setPayment(null);
       return null;
     }
   };
 
-  // Fetch payment statistics
+  // Fetch payment statistics (only if admin has access; otherwise skip to avoid 403)
   const fetchPaymentStats = async () => {
-    try {
-      const response = await axiosInstance.get('/payments/stats');
-      if (response.data.success) {
-        setPaymentStats(response.data.data);
-        console.log('Payment stats fetched:', response.data.data);
-      }
-    } catch (err) {
-      console.error('Error fetching payment stats:', err);
-      setPaymentStats(null);
-    }
+    // Student read-only: skip admin stats to avoid 403 in console
+    setPaymentStats(null);
   };
 
   // Create new payment
@@ -115,24 +87,10 @@ export const usePayments = (userId) => {
     }
   };
 
-  // Add partial payment
-  const addPayment = async (paymentId, amount) => {
-    try {
-      const response = await axiosInstance.post(`/payments/${paymentId}/add-payment`, {
-        amount: parseFloat(amount)
-      });
-
-      if (response.data.success) {
-        await fetchPayments(); // Refresh payments list
-        await fetchLatestPayment(); // Refresh latest payment
-        return response.data.data;
-      } else {
-        throw new Error(response.data.message || 'Erreur lors de l\'ajout du paiement');
-      }
-    } catch (err) {
-      console.error('Error adding payment:', err);
-      throw err;
-    }
+  // Add partial payment — CLIENT READ-ONLY: disabled (admin modifies via admin Payments).
+  const addPayment = async () => {
+    console.warn('addPayment disabled: client is read-only. Use admin dashboard to modify payments.');
+    return Promise.resolve(null);
   };
 
   // Auto-fetch payments on component mount

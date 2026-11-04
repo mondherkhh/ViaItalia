@@ -1,15 +1,16 @@
 import React, { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../context/AuthContext";
+import { CLIENT_MENU, getMobileMenuItems } from "./user/components/navigation/menuConfig";
 import {
   FiHome,
   FiCalendar,
   FiMessageSquare,
   FiUser,
   FiFileText,
+  FiBook,
   FiFolder,
   FiCreditCard,
   FiFile,
-  FiVolume2,
   FiMenu,
   FiX
 } from "react-icons/fi";
@@ -29,8 +30,9 @@ import DossierSection from "./user/components/sections/Dossier/DossierSection";
 import ProfileSection from "./user/components/sections/Profile/ProfileSection";
 import DashboardSection from "./user/components/sections/Dashboard/DashboardSection";
 import { PaymentSection } from "./user/components/sections/Payment";
-import AnnouncementsSection from "./user/components/sections/Announcements/AnnouncementsSection";
 import ReceiptsSection from "./user/components/sections/Receipts/ReceiptsSection";
+import NotificationsPage from "./user/components/sections/Notifications/NotificationsPage";
+import ReviewsSection from "./user/components/sections/Reviews/ReviewsSection";
 
 const UserDashboard = () => {
   const { user, logoutUser } = useContext(AuthContext);
@@ -66,19 +68,15 @@ const UserDashboard = () => {
         display: contents;
       }
 
+      /* One mobile navigation drawer for all breakpoints (769-1024 included) */
       .client-mobile-menu-button,
       .client-mobile-menu,
       .client-mobile-menu-backdrop {
         display: none;
       }
 
-      @media (max-width: 768px) {
+      @media (max-width: 1024px) {
         .client-desktop-sidebar {
-          display: none !important;
-        }
-
-        header button[aria-label*="menu" i],
-        header button[title*="menu" i] {
           display: none !important;
         }
 
@@ -200,24 +198,28 @@ const UserDashboard = () => {
     };
   }, []);
 
-  const menuItems = [
-    { id: 'dashboard', icon: <FiHome />, text: 'Tableau de Bord' },
-    { id: 'rendezvous', icon: <FiCalendar />, text: 'Rendez-vous' },
-    { id: 'messagerie', icon: <FiMessageSquare />, text: 'Messagerie' },
-    { id: 'profile', icon: <FiUser />, text: 'Profil' },
-    { id: 'parcours', icon: <FiFileText />, text: 'Contrat' },
-    { id: 'dossier', icon: <FiFolder />, text: 'Dossier' },
-    { id: 'paiement', icon: <FiCreditCard />, text: 'Paiement' },
-    { id: 'recus', icon: <FiFile />, text: 'My Receipts' },
-    { id: 'annonces', icon: <FiVolume2 />, text: 'Annonces' }
-  ];
+  const menuItems = CLIENT_MENU;
 
   const handleMenuClick = (menuId) => {
     setActiveMenu(menuId);
   };
 
-  const handleLogout = () => {
-    logoutUser();
+  const handleLogout = async () => {
+    try {
+      if (logoutUser) await logoutUser();
+    } catch (e) {
+      console.error('Logout API error:', e);
+    }
+    try {
+      window.localStorage.removeItem("token");
+      window.localStorage.removeItem("role");
+      window.localStorage.removeItem("user");
+      window.sessionStorage.clear();
+      document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    } catch (e) {
+      console.error('Storage clear error:', e);
+    }
+    window.location.replace('/login');
   };
 
   const renderContent = () => {
@@ -247,6 +249,24 @@ const UserDashboard = () => {
         );
       
    
+      case 'notifications':
+        return (
+          <ContentArea
+            title="Notifications"
+            subtitle="Reçus, paiements, accès aux documents et messages de votre conseiller"
+          >
+            <NotificationsPage />
+          </ContentArea>
+        );
+
+      case 'reviews':
+        return (
+          <ContentArea title="Donner mon avis" subtitle="Partagez votre expérience avec d'autres étudiants">
+            <ReviewsSection />
+          </ContentArea>
+        );
+
+      case 'university':
         return (
           <ContentArea 
             title="Informations Universitaires"
@@ -268,8 +288,6 @@ const UserDashboard = () => {
       case 'paiement':
         return <PaymentSection />;
       
-      case 'annonces':
-        return <AnnouncementsSection />;
       case 'recus':
         return <ReceiptsSection />;
       
@@ -338,10 +356,11 @@ const UserDashboard = () => {
       />
       <MainContent>
         <div className="client-desktop-sidebar">
-          <Sidebar 
+          <Sidebar
             activeMenu={activeMenu}
             menuItems={menuItems}
             onMenuClick={handleMenuClick}
+            onLogout={handleLogout}
           />
         </div>
         <ContentArea activeMenu={activeMenu}>

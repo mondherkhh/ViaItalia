@@ -1,14 +1,22 @@
 import styled from 'styled-components';
 
+export const HeaderCard = styled.header`
+  background: var(--adm-panel); border: 1px solid var(--adm-border); border-radius: 20px;
+  padding: 0 20px; min-height: 72px; display: flex; justify-content: space-between; align-items: center;
+  z-index: 5; margin: 12px 0; box-shadow: 0 4px 28px rgba(0,0,0,0.08); backdrop-filter: blur(10px);
+  @media (max-width: 768px) { height: 68px; padding: 0 16px; border-radius: 16px; margin: 8px 0; }
+  @media (max-width: 480px) { height: 64px; padding: 0 12px; border-radius: 12px; }
+`;
+
 export const HeaderContainer = styled.header`
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   height: 96px;
-  background: var(--client-surface, #071321);
-  color: var(--client-text, #e8eef7);
-  border-bottom: 1px solid var(--client-border, #13263a);
+  background: var(--adm-panel, #FBFCFB);
+  color: var(--adm-text, #12201A);
+  border-bottom: 1px solid var(--adm-border, #DFE5E0);
   border-radius: 0;
   z-index: 1000;
   box-shadow: 0 8px 24px rgba(0, 0, 0, .14);
@@ -167,7 +175,7 @@ export const NotificationButton = styled.button`
   position: relative;
   width: 48px;
   height: 48px;
-  background: ${props => props.hasUnread ? 'rgba(23, 155, 92, .18)' : 'var(--client-surfaceSoft, #0d1c2d)'};
+  background: ${props => props.$hasUnread ? 'rgba(23, 155, 92, .18)' : 'var(--client-surfaceSoft, #0d1c2d)'};
   border: 1px solid var(--client-border, #21364c);
   border-radius: 14px;
   display: flex;
@@ -192,18 +200,18 @@ export const NotificationButton = styled.button`
     stroke-width: 2;
   }
 
-  box-shadow: ${props => props.hasUnread 
+  box-shadow: ${props => props.$hasUnread 
     ? '0 4px 20px rgba(167, 139, 233, 0.3)' 
     : 'none'
   };
   
   &:hover {
-    background: ${props => props.hasUnread 
+    background: ${props => props.$hasUnread 
       ? 'linear-gradient(135deg, #a78bfa 0%, #ec4899 50%, #f472b6 100%)' 
       : 'rgba(255, 255, 255, 0.15)'
     };
     transform: translateY(-2px);
-    box-shadow: ${props => props.hasUnread 
+    box-shadow: ${props => props.$hasUnread 
       ? '0 8px 30px rgba(167, 139, 233, 0.4)' 
       : '0 8px 25px rgba(0, 0, 0, 0.15)'
     };
@@ -378,7 +386,7 @@ export const NotificationItem = styled.div`
     border-bottom: none;
   }
   
-  ${props => props.isUnread && `
+  ${props => props.$isUnread && `
     background: rgba(102, 126, 234, 0.05);
     border-left: 3px solid #667eea;
   `}
@@ -388,7 +396,7 @@ export const NotificationIcon = styled.div`
   width: 36px;
   height: 36px;
   background: ${props => {
-    if (props.isUnread) {
+    if (props.$isUnread) {
       if (props.type === 'success') return 'linear-gradient(135deg, #00b09b, #00d4aa)';
       if (props.type === 'warning') return 'linear-gradient(135deg, #f093fb, #f5576c)';
       if (props.type === 'error') return 'linear-gradient(135deg, #ff6b6b, #ee5a24)';
@@ -401,7 +409,7 @@ export const NotificationIcon = styled.div`
     }
   }};
   color: ${props => {
-    if (props.isUnread) {
+    if (props.$isUnread) {
       if (props.type === 'success') return '#ffffff';
       if (props.type === 'warning') return '#ffffff';
       if (props.type === 'error') return '#ffffff';
@@ -419,7 +427,7 @@ export const NotificationIcon = styled.div`
   justify-content: center;
   font-size: 1rem;
   flex-shrink: 0;
-  box-shadow: ${props => props.isUnread 
+  box-shadow: ${props => props.$isUnread 
     ? '0 4px 15px rgba(96, 165, 250, 0.3)' 
     : 'none'
   };
@@ -427,7 +435,7 @@ export const NotificationIcon = styled.div`
   
   &:hover {
     transform: scale(1.05);
-    box-shadow: ${props => props.isUnread 
+    box-shadow: ${props => props.$isUnread 
       ? '0 6px 20px rgba(96, 165, 250, 0.4)' 
       : '0 2px 8px rgba(0, 0, 0, 0.1)'
     };
@@ -451,7 +459,7 @@ export const NotificationMessage = styled.div`
   margin-bottom: 0.25rem;
   line-height: 1.4;
   
-  ${props => props.isUnread && `
+  ${props => props.$isUnread && `
     font-weight: 600;
   `}
 `;
@@ -610,12 +618,13 @@ export const UserInfo = styled.div`
 `;
 
 export const UserDropdown = styled.div`
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  width: 200px;
-  background: var(--client-surfaceSoft, rgba(255, 255, 255, 0.08));
-  color: var(--client-text, #e8eef7);
+  position: fixed;
+  top: ${props => props.$pos?.top ?? '10px'};
+  right: ${props => props.$pos?.right ?? 8}px;
+  width: 220px;
+  z-index: 9999;
+  background: var(--client-surfaceSoft, rgba(255,255,255,0.95));
+  color: var(--client-text, #111827);
   backdrop-filter: blur(25px);
   border: 1px solid var(--client-border, rgba(255, 255, 255, 0.15));
   border-radius: 12px;
@@ -635,14 +644,14 @@ export const UserDropdown = styled.div`
 
 export const UserInfoHeader = styled.div`
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(96, 165, 250, 0.1);
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  background: rgba(96, 165, 250, 0.12);
 `;
 
 export const UserInfoName = styled.div`
   font-size: 0.9rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--adm-text, #111827);
   text-align: center;
   word-break: break-word;
 `;
@@ -656,7 +665,7 @@ export const UserMenuItem = styled.button`
   background: none;
   border: none;
   padding: 0.75rem 1rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--adm-text, #111827);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -666,15 +675,15 @@ export const UserMenuItem = styled.button`
   gap: 0.75rem;
   text-align: left;
   width: 100%;
-  
+
   &:hover {
     background: rgba(96, 165, 250, 0.2);
-    color: rgba(255, 255, 255, 1);
+    color: var(--adm-text, #111827);
   }
-  
+
   &:active {
     background: rgba(96, 165, 250, 0.3);
-    color: rgba(255, 255, 255, 1);
+    color: var(--adm-text, #111827);
   }
 `;
 
@@ -844,6 +853,40 @@ export const MobileMenuItem = styled.button`
   }
 `;
 
+export const HeaderLeft = styled.div`
+  display: flex; align-items: center; gap: 12px;
+`;
+export const MenuButton = styled.button`
+  width: 40px; height: 40px; border-radius: 10px;
+  border: 1px solid var(--adm-border); background: var(--adm-surface);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  color: var(--adm-text); font-size: 1.1rem;
+`;
+export const HeaderText = styled.div`
+  display: flex; flex-direction: column; gap: 2px;
+`;
+export const HeaderTitle = styled.h1`
+  font-weight: 700; font-size: 1.15rem; color: var(--adm-text); margin: 0; line-height: 1.2;
+`;
+export const HeaderSubtitle = styled.div`
+  font-size: 0.78rem; color: var(--adm-muted); line-height: 1.3;
+`;
+export const SearchWrapper = styled.div`
+  display: flex; align-items: center; gap: 8px; padding: 0.5rem 0.85rem;
+  background: var(--adm-surface); border: 1px solid var(--adm-border); border-radius: 12px;
+  min-width: 220px; max-width: 320px; flex: 1; transition: border-color 0.2s ease;
+  &:focus-within { border-color: var(--adm-accent); }
+  @media (max-width: 768px) { display: none; }
+`;
+export const SearchInput = styled.input`
+  background: transparent; border: none; outline: none; color: var(--adm-text);
+  font-size: 0.85rem; width: 100%; padding: 0;
+  &::placeholder { color: var(--adm-muted); }
+`;
+export const HeaderActionsList = styled.div`
+  display: flex; align-items: center; gap: 10px;
+`;
+
 export const NavMenuContainer = styled.div`
   position: relative;
   display: flex;
@@ -928,9 +971,9 @@ export const NavMenuItemLink = styled.button`
   background: none;
   border: none;
   padding: 1rem;
-  color: ${props => props.isActive ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.8)'};
+  color: ${props => props.$isActive ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.8)'};
   font-size: 0.9rem;
-  font-weight: ${props => props.isActive ? '600' : '500'};
+  font-weight: ${props => props.$isActive ? '600' : '500'};
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -940,7 +983,7 @@ export const NavMenuItemLink = styled.button`
   width: 100%;
   position: relative;
   
-  ${props => props.isActive && `
+  ${props => props.$isActive && `
     background: rgba(96, 165, 250, 0.2);
     border-left: 3px solid #60a5fa;
   `}

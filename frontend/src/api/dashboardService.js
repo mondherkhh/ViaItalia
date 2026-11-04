@@ -1,183 +1,205 @@
 import axiosInstance from './axiosInstance';
 
+/**
+ * Client dashboard data source.
+ *
+ * Everything comes from ONE endpoint: GET /student/dashboard
+ * The server resolves the student from the JWT (req.user.userId), so no
+ * user id ever travels in the URL. When several accessors are called during
+ * the same render, the in-flight request is reused and the payload is cached
+ * for a short window, so the browser issues a single network call.
+ */
+
+const CACHE_TTL_MS = 15000;
+
+let cache = null;          // { at: number, data: object }
+let inFlight = null;       // Promise resolving to the payload
+
+const asList = value => (Array.isArray(value) ? value : []);
+
+function normalize(payload) {
+  const data = payload && payload.data ? payload.data : {};
+  return {
+    profile: data.profile || null,
+    dossier: data.dossier || null,
+    progressPercent: Number(data.progressPercent || 0),
+    payments: {
+      items: asList(data.payments && data.payments.items),
+      totalPaid: Number((data.payments && data.payments.totalPaid) || 0)
+    },
+    announcements: asList(data.announcements),
+    messages: asList(data.messages),
+    contract: data.contract || null,
+    counts: data.counts || { openTasks: 0, applications: 0, documents: 0 }
+  };
+}
+
+async function fetchDashboard() {
+  const now = Date.now();
+  if (cache && now - cache.at < CACHE_TTL_MS) {
+    return cache.data;
+  }
+  if (!inFlight) {
+    inFlight = axiosInstance
+      .get('/student/dashboard')
+      .then(response => {
+        const body = response.data || {};
+        if (body.success === false) {
+          throw new Error(body.message || 'Erreur serveur');
+        }
+        const data = normalize(body);
+        cache = { at: Date.now(), data };
+        return data;
+      })
+      .finally(() => {
+        inFlight = null;
+      });
+  }
+  return inFlight;
+}
+
+function invalidateCache() {
+  cache = null;
+}
+
 const dashboardService = {
-  // Get all dashboard data in one call
-  getDashboardData: async (userId) => {
+  /** Full normalized dashboard payload. */
+  getDashboardData: async () => {
     try {
-      const response = await axiosInstance.get(`/dashboard/user/${userId}`);
-      return response.data;
+      return await fetchDashboard();
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       throw error;
     }
   },
 
-  // Get latest appointments for dashboard
-  getLatestAppointments: async (userId, limit = 5) => {
+  /** Same payload; kept for API compatibility with existing call sites. */
+  getDashboardStats: async () => {
     try {
-      const response = await axiosInstance.get(`/appointments/user/${userId}?limit=${limit}&sort=date:desc`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching latest appointments:', error);
-      throw error;
-    }
-  },
-
-  // Get latest messages for dashboard
-  getLatestMessages: async (userId, limit = 5) => {
-    try {
-      const response = await axiosInstance.get(`/messages/user/${userId}?limit=${limit}&sort=createdAt:desc`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching latest messages:', error);
-      throw error;
-    }
-  },
-
-  // Get contract info for dashboard
-  getContractInfo: async (userId) => {
-    try {
-      const response = await axiosInstance.get(`/contracts/my-contract`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching contract info:', error);
-      throw error;
-    }
-  },
-
-  // Get dossier info for dashboard
-  getDossierInfo: async (userId) => {
-    try {
-      const response = await axiosInstance.get(`/dossiers/user/${userId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching dossier info:', error);
-      throw error;
-    }
-  },
-
-  // Get latest announcements for dashboard
-  getLatestAnnouncements: async (limit = 3) => {
-    try {
-      const response = await axiosInstance.get('/announcements/active');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching latest announcements:', error);
-      throw error;
-    }
-  },
-
-  // Get dashboard statistics
-  getDashboardStats: async (userId) => {
-    try {
-      const response = await axiosInstance.get(`/dashboard/stats/${userId}`);
-      return response.data;
+      const data = await fetchDashboard();
+      return { success: true, data: { ...data.counts, progressPercent: data.progressPercent } };
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
-      throw error;
+      return { success: false, data: {} };
     }
   },
 
-  // Get upcoming appointments count
-  getUpcomingAppointmentsCount: async (userId) => {
+  /** Payments list (all items, not truncated). */
+  getPaymentInfo: async () => {
     try {
-      const response = await axiosInstance.get(`/appointments/user/${userId}/upcoming/count`);
-      return response.data;
+      const data = await fetchDashboard();
+      return { success: true, data: data.payments.items };
     } catch (error) {
-      console.error('Error fetching upcoming appointments count:', error);
-      throw error;
-    }
-  },
-
-  // Get unread messages count
-  getUnreadMessagesCount: async (userId) => {
-    try {
-      const response = await axiosInstance.get(`/messages/user/${userId}/unread/count`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching unread messages count:', error);
-      throw error;
-    }
-  },
-
-  // Get contract status
-  getContractStatus: async (userId) => {
-    try {
-      const response = await axiosInstance.get(`/contracts/my-contract`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching contract status:', error);
-      throw error;
-    }
-  },
-
-  // Get dossier progress
-  getDossierProgress: async (userId) => {
-    try {
-      const response = await axiosInstance.get(`/dossiers/user/${userId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching dossier progress:', error);
-      throw error;
-    }
-  },
-
-  // Get payment info for dashboard
-  getPaymentInfo: async (userId) => {
-    try {
-      console.log('=== DASHBOARD: FETCHING PAYMENTS FOR USER:', userId);
-      const response = await axiosInstance.get(`/payments/users/${userId}/payments`);
-      console.log('Dashboard Payments API response:', response);
-      console.log('Dashboard Response data:', response.data);
-      console.log('Dashboard Response status:', response.status);
-      
-      if (response.data.success) {
-        const paymentsData = response.data.data || [];
-        console.log('✅ Dashboard Payments fetched successfully:', paymentsData);
-        
-        // If no payments found, don't set an error - this is normal
-        if (paymentsData.length === 0) {
-          console.log('ℹ️ Dashboard: No payments found for user:', userId);
-        }
-        
-        return response.data;
-      } else {
-        console.log('❌ Dashboard API returned success=false:', response.data.message);
-        return { success: false, data: [] };
-      }
-    } catch (error) {
-      console.error('❌ Dashboard Error fetching payment info:', error);
-      console.error('Dashboard Error status:', error.response?.status);
-      console.error('Dashboard Error data:', error.response?.data);
-      console.error('Dashboard Error config:', error.config);
+      console.error('Error fetching payment info:', error);
       return { success: false, data: [] };
     }
   },
 
-  // Get latest payment for dashboard
-  getLatestPayment: async (userId) => {
+  /** Latest payment, or null. */
+  getLatestPayment: async () => {
     try {
-      console.log('=== DASHBOARD: FETCHING LATEST PAYMENT FOR USER:', userId);
-      const response = await axiosInstance.get(`/payments/users/${userId}/payments`);
-      console.log('Dashboard Latest payment API response:', response);
-      console.log('Dashboard Latest payment response data:', response.data);
-      console.log('Dashboard Latest payment response status:', response.status);
-      
-      if (response.data.success && response.data.data && response.data.data.length > 0) {
-        const latestPayment = response.data.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
-        console.log('✅ Dashboard Latest payment fetched successfully:', latestPayment);
-        return { success: true, data: latestPayment };
-      }
-      console.log('ℹ️ Dashboard: No payments found for user:', userId);
-      return { success: true, data: null };
+      const data = await fetchDashboard();
+      const items = data.payments.items;
+      const latest = items.length
+        ? [...items].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
+        : null;
+      return { success: true, data: latest };
     } catch (error) {
-      console.error('❌ Dashboard Error fetching latest payment:', error);
-      console.error('Dashboard Latest payment error status:', error.response?.status);
-      console.error('Dashboard Latest payment error data:', error.response?.data);
-      console.error('Dashboard Latest payment error config:', error.config);
+      console.error('Error fetching latest payment:', error);
       return { success: false, data: null };
     }
-  }
+  },
+
+  /** Dossier of the authenticated student. */
+  getDossierInfo: async () => {
+    try {
+      const data = await fetchDashboard();
+      return { success: true, data: data.dossier };
+    } catch (error) {
+      console.error('Error fetching dossier info:', error);
+      return { success: false, data: null };
+    }
+  },
+
+  /** Active announcements. */
+  getLatestAnnouncements: async () => {
+    try {
+      const data = await fetchDashboard();
+      return { success: true, data: data.announcements };
+    } catch (error) {
+      console.error('Error fetching latest announcements:', error);
+      return { success: false, data: [] };
+    }
+  },
+
+  /** Latest messages sent to the student. */
+  getLatestMessages: async () => {
+    try {
+      const data = await fetchDashboard();
+      return { success: true, data: data.messages };
+    } catch (error) {
+      console.error('Error fetching latest messages:', error);
+      return { success: false, data: [] };
+    }
+  },
+
+  /** Contract of the authenticated student. */
+  getContractInfo: async () => {
+    try {
+      const data = await fetchDashboard();
+      return { success: true, data: data.contract };
+    } catch (error) {
+      console.error('Error fetching contract info:', error);
+      return { success: false, data: null };
+    }
+  },
+
+  /** Contract status (same payload). */
+  getContractStatus: async () => {
+    try {
+      const data = await fetchDashboard();
+      return { success: true, data: data.contract };
+    } catch (error) {
+      console.error('Error fetching contract status:', error);
+      return { success: false, data: null };
+    }
+  },
+
+  /** Dossier progress (same payload). */
+  getDossierProgress: async () => {
+    try {
+      const data = await fetchDashboard();
+      return { success: true, data: { dossier: data.dossier, progressPercent: data.progressPercent } };
+    } catch (error) {
+      console.error('Error fetching dossier progress:', error);
+      return { success: false, data: null };
+    }
+  },
+
+  /** Counters shown in the dashboard header. */
+  getUpcomingAppointmentsCount: async () => {
+    try {
+      const data = await fetchDashboard();
+      return { success: true, data: data.counts.openTasks };
+    } catch (error) {
+      console.error('Error fetching upcoming appointments count:', error);
+      return { success: false, data: 0 };
+    }
+  },
+
+  /** Unread messages count (not exposed by the aggregate endpoint yet). */
+  getUnreadMessagesCount: async () => {
+    try {
+      const data = await fetchDashboard();
+      return { success: true, data: data.messages.length };
+    } catch (error) {
+      console.error('Error fetching unread messages count:', error);
+      return { success: false, data: 0 };
+    }
+  },
+
+  /** Drop the cached payload (used by the Retry button). */
+  invalidateCache
 };
 
 export default dashboardService;

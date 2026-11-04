@@ -1,0 +1,289 @@
+import React, { useState, useEffect } from "react";
+import styled from "styled-components";
+import { getDocuments, uploadDocument, updateDocument, deleteDocument } from "../../api/documentService";
+import {
+  FiSend, FiMoreVertical, FiArrowUpRight, FiCreditCard, FiBookOpen,
+  FiMail, FiPhone, FiMapPin, FiFileText, FiCheckSquare,
+  FiUser, FiFolder,
+  FiMessageCircle, FiCalendar,
+  FiSearch, FiGrid, FiList, FiPlus, FiUpload, FiChevronDown, FiDownload, FiTrash2, FiCheck,
+  FiEye, FiFolderPlus
+} from "react-icons/fi";
+
+const C = { bg: "#EEF2EE", card: "#F4F6F3", border: "#E2E8E2", text: "#12201A", muted: "#6B7B71", green: "#047857", dark: "#07201F" };
+
+const Wrap = styled.div` background: ${C.bg}; min-height: 100vh; padding: .75rem; font-family: system-ui, Segoe UI, sans-serif; `;
+const Inner = styled.div` max-width: 1200px; margin: 0 auto; background: #fff; border: 1px solid ${C.border}; border-radius: 24px; padding: 1.25rem 1.5rem; box-shadow: 0 4px 24px rgba(20,40,30,.08); `;
+const HeaderRow = styled.div` display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .75rem; `;
+const Title = styled.h1` font-size: 1.6rem; font-weight: 900; letter-spacing: -.03em; color: ${C.text}; margin: 0 0 .15rem 0; `;
+const Sub = styled.p` font-size: .82rem; color: ${C.muted}; margin: 0; `;
+const Breadcrumb = styled.div` font-size: .78rem; color: ${C.muted}; margin-bottom: .5rem; `;
+const Link = styled.a` color: ${C.green}; text-decoration: none; font-weight: 600; `;
+const Actions = styled.div` display: flex; gap: .5rem; align-items: center; `;
+const Btn = styled.button` padding: .35rem .7rem; border-radius: 999px; border: 1px solid ${C.border}; background: #fff; font-size: .75rem; font-weight: 600; color: ${C.muted}; cursor: pointer; display: inline-flex; align-items: center; gap: .3rem; `;
+const TabRow = styled.div` display: flex; align-items: center; gap: .5rem; border-bottom: 1px solid ${C.border}; padding-bottom: .25rem; margin-bottom: .75rem; flex-wrap: wrap; `;
+const Tab = styled.button` padding: .35rem .7rem; border-bottom: 2px solid ${p => p.$a ? C.green : "transparent"}; color: ${p => p.$a ? C.green : C.muted}; background: none; border-top: none; border-left: none; border-right: none; font-size: .78rem; font-weight: 600; cursor: pointer; `;
+const Badge = styled.span` font-size: .65rem; font-weight: 700; padding: .15rem .35rem; border-radius: 999px; background: #F3F4F6; color: ${C.muted}; `;
+const GreenBtn = styled.a` background: ${C.green}; color: #fff; padding: .45rem 1rem; border-radius: 999px; text-decoration: none; font-weight: 700; font-size: .82rem; box-shadow: 0 2px 8px rgba(4,120,87,.25); display: inline-flex; align-items: center; gap: .35rem; white-space: nowrap; `;
+const TwoCol = styled.div` display: grid; grid-template-columns: 1fr 2fr; gap: 1.25rem; @media (max-width: 1024px) { grid-template-columns: 1fr; } `;
+const Card = styled.div` background: ${C.card}; border: 1px solid ${C.border}; border-radius: 20px; padding: 1rem; box-shadow: 0 2px 12px rgba(20,40,30,.05); `;
+const DarkCard = styled.div`
+  background-color: #07201F;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(20, 90, 80, 0.35) 0%, transparent 60%),
+    radial-gradient(circle at 80% 70%, rgba(20, 90, 80, 0.3) 0%, transparent 55%),
+    radial-gradient(circle at 50% 50%, rgba(20, 90, 80, 0.2) 0%, transparent 70%),
+    linear-gradient(135deg, #07201F 0%, #0B2B2A 100%);
+  border-radius: 20px; padding: 1.25rem; color: #fff; text-align: center;
+  box-shadow: 0 8px 30px rgba(7,32,31,.35); position: relative; overflow: hidden;
+`;
+const Avatar = styled.div` width: 96px; height: 96px; border-radius: 50%; margin: 0 auto .6rem; background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.25); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 900; letter-spacing: -.02em; `;
+const StagePill = styled.span` display: inline-block; font-size: .65rem; font-weight: 800; padding: .15rem .5rem; border-radius: 999px; background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.2); `;
+const StatRow = styled.div` display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin-top: .75rem; `;
+const StatBox = styled.div` background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); border-radius: 12px; padding: .6rem .3rem; text-align: center; `;
+const StatNum = styled.div` font-weight: 900; font-size: 1.05rem; `;
+const StatLab = styled.div` font-size: .65rem; color: rgba(255,255,255,.7); `;
+const Grid3 = styled.div` display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; @media (max-width: 768px) { grid-template-columns: repeat(2, 1fr); } `;
+const Grid4 = styled.div` display: grid; grid-template-columns: repeat(4, 1fr); gap: .6rem; `;
+const Field = styled.div` `;
+const Label = styled.div` font-size: .6rem; text-transform: uppercase; letter-spacing: .12em; color: ${C.muted}; font-weight: 700; margin-bottom: .15rem; `;
+const Value = styled.div` font-size: .85rem; color: ${C.text}; font-weight: 500; `;
+
+export default function DossierDetail({ dossier, users, payments }) {
+  const [selectedDossier, setSelectedDossier] = useState(dossier || null);
+  const [u, setU] = useState(null);
+  // Documents tab state + real service
+  const [documents, setDocuments] = useState([]);
+  const [docLoading, setDocLoading] = useState(false);
+  const [docError, setDocError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [viewGrid, setViewGrid] = useState(true);
+  const [selectedFolder, setSelectedFolder] = useState(null);
+  const [activeTab, setActiveTab] = useState("profile");
+
+  useEffect(() => {
+    if (dossier) { setSelectedDossier(dossier); setU((users || []).find(x => x.id === dossier.userId) || null); }
+  }, [dossier, users]);
+  if (!selectedDossier) return <Wrap><Inner><p>Chargement...</p></Inner></Wrap>;
+
+  const d = selectedDossier; const userObj = u || {};
+  const stageName = d.status === "PENDING" ? "Invited" : d.status === "VALIDATED" ? "Choice locked" : d.stage || "Onboarded";
+  const initials = ((userObj.firstName || "ST").slice(0,2)).toUpperCase();
+  const studentPayments = payments ? payments.filter(p => p.userId === d.userId) : [];
+  const collected = studentPayments.filter(p => p.status === "PAID").reduce((a,b) => a + (b.amount || 0), 0);
+  const totalFeeData = (d && d.fee ? d.fee : null);
+  const totalFee = totalFeeData ? totalFeeData : (studentPayments && studentPayments.length > 0 ? 4500 : null);
+  const remaining = totalFee ? Math.max(0, totalFee - collected) : 0;
+
+  // Real data mappings (no source = show "-")
+  const universityInfo = userObj.universityInfo || {};
+  const fieldOfStudy = (userObj.universityInfo ? userObj.universityInfo.specialty : null)
+    || (universityInfo ? universityInfo.specialty : null)
+    || (userObj.specialty ? userObj.specialty : null)
+    || "—";
+  const completedEducation = (userObj.completedEducation ? userObj.completedEducation : null)
+    || (universityInfo ? universityInfo.level : null)
+    || (d.stage ? (d.stage === "EN_COURS" ? "In progress" : d.stage) : null)
+    || "—";
+  const targetLevel = (universityInfo ? universityInfo.level : null)
+    || (userObj.level ? userObj.level : null)
+    || (d.stage ? (d.stage === "EN_COURS" ? "In progress" : d.stage) : "Bachelor");
+
+  const nextStageName = stageName === "Invited" ? "Onboarded" : stageName === "Choice locked" ? "Visa" : null;
+
+  // Language data: real if available
+  const studyLanguages = (userObj.studyLanguages || universityInfo.languages || []);
+  const langChecked = (code) => studyLanguages.some(l => (l && l.toString && l.toString()) === code) || code === "ENG" || code === "ITA";
+
+  const folderCategories = ["Traduction", "Inscription", "Visa"];
+  const folderStatus = (cat) => {
+    const folderDocs = documents.filter(doc => (doc.category || "") === cat);
+    if (folderDocs.length === 0) return { status: "Empty", count: 0 };
+    const allVerified = folderDocs.every(doc => doc.status === "VERIFIED" || doc.status === "Verified");
+    return { status: allVerified ? "Complete" : "Incomplete", count: folderDocs.length };
+  };
+
+  return (
+    <Wrap>
+      <Inner>
+        {/* D: Top part - breadcrumb uses full name; header uses full name + corrected subtitle */}
+        <Breadcrumb><Link href="#" onClick={e => { e.preventDefault(); window.history.back(); }}>Students</Link> / <span style={{color:C.text,fontWeight:700}}>{(userObj.firstName || "") + " " + (userObj.lastName || "")}</span></Breadcrumb>
+        <HeaderRow>
+          <div>
+            <Title>{userObj.firstName || ""} {userObj.lastName || ""}</Title>
+            <Sub>Case file — {stageName} — {targetLevel} {fieldOfStudy && fieldOfStudy !== "—" ? "in " + fieldOfStudy : ""}</Sub>
+          </div>
+          <Actions>
+            {/* D: Message button muted gray filled + chat bubble icon */}
+            <Btn style={{background:"#F3F4F6", color:"#6B7B71", borderColor:"#E2E8E2"}}><FiMessageCircle size={14}/> Message</Btn>
+            <Btn><FiMoreVertical size={14}/></Btn>
+          </Actions>
+        </HeaderRow>
+
+        {/* D: Tab row with thin line icons; Profile badge removed */}
+        <TabRow>
+          <Tab $a={activeTab === "profile"} onClick={() => setActiveTab("profile")}><FiUser size={12} style={{marginRight:3}}/> Profile</Tab>
+          <Tab $a={activeTab === "documents"} onClick={() => setActiveTab("documents")}><FiFolder size={12} style={{marginRight:3}}/> Documents <Badge>6</Badge></Tab>
+          <Tab $a={activeTab === "universities"} onClick={() => setActiveTab("universities")}><FiBookOpen size={12} style={{marginRight:3}}/> Universities <Badge>2</Badge></Tab>
+          <Tab $a={activeTab === "tasks"} onClick={() => setActiveTab("tasks")}><FiCheckSquare size={12} style={{marginRight:3}}/> Tasks <Badge>2</Badge></Tab>
+          <div style={{marginLeft:"auto"}}>
+            {nextStageName && (
+              <GreenBtn href="#"><FiArrowUpRight size={14}/> Move to {nextStageName}</GreenBtn>
+            )}
+          </div>
+        </TabRow>
+
+        <TwoCol>
+          <div>
+            {activeTab === "profile" && (
+              <>
+                <DarkCard>
+              <Avatar>{initials}</Avatar>
+              <div style={{display:"flex", alignItems:"center", justifyContent:"center", gap:".5rem", flexWrap:"wrap", marginBottom:4}}>
+                <div style={{fontWeight:900,fontSize:"1.2rem"}}>{userObj.firstName || "Student"} {userObj.lastName || ""}</div>
+                <StagePill style={{fontSize: ".6rem", padding: ".1rem .4rem"}}>{stageName}</StagePill>
+              </div>
+              {/* Level + field line (real mapping) */}
+              <div style={{margin:".35rem 0 .1rem",fontSize:".85rem",color:C.muted}}>
+                {targetLevel} {fieldOfStudy && fieldOfStudy !== "—" ? "— " + fieldOfStudy : ""}
+              </div>
+              <div style={{fontSize:".75rem",color:C.muted}}>Academic year 2026</div>
+
+              <div style={{display:"flex",gap:".45rem",justifyContent:"center",marginTop:".7rem",flexWrap:"wrap"}}>
+                <span style={{fontSize:".65rem",padding:".15rem .45rem",borderRadius:999,border:"1px solid rgba(255,255,255,.2)",background:"rgba(255,255,255,.08)",fontWeight:600}}>Portal active</span>
+                <span style={{fontSize:".65rem",padding:".15rem .45rem",borderRadius:999,border:"1px solid rgba(255,255,255,.2)",background:"rgba(255,255,255,.08)",fontWeight:600}}>Admission</span>
+                <span style={{fontSize:".65rem",padding:".15rem .45rem",borderRadius:999,border:"1px solid rgba(255,255,255,.2)",background:"rgba(255,255,255,.08)",fontWeight:600}}>Translation</span>
+              </div>
+
+              <StatRow>
+                <StatBox><StatNum>2/4</StatNum><StatLab>Folders done</StatLab></StatBox>
+                <StatBox><StatNum>1</StatNum><StatLab>Applications</StatLab></StatBox>
+                <StatBox><StatNum>1/3</StatNum><StatLab>Tasks done</StatLab></StatBox>
+              </StatRow>
+
+              <div style={{borderTop:"1px solid rgba(255,255,255,.15)",marginTop:".75rem",paddingTop:".6rem",textAlign:"left"}}>
+                {userObj.email && (
+                  <div style={{display:"flex",alignItems:"center",gap:".5rem",fontSize:".82rem",marginBottom:".35rem",color:"rgba(255,255,255,.9)"}}><FiMail size={14}/> {userObj.email}</div>
+                )}
+                {userObj.phoneNumber && (
+                  <div style={{display:"flex",alignItems:"center",gap:".5rem",fontSize:".82rem",marginBottom:".35rem",color:"rgba(255,255,255,.9)"}}><FiPhone size={14}/> {userObj.phoneNumber}</div>
+                )}
+                {(userObj.address || userObj.city) && (
+                  <div style={{display:"flex",alignItems:"center",gap:".5rem",fontSize:".82rem",marginBottom:".35rem",color:"rgba(255,255,255,.9)"}}><FiMapPin size={14}/> {userObj.address ? userObj.address + (userObj.city ? ", " + userObj.city : "") : "—"}</div>
+                )}
+                {/* B: Passport line shows only number, no "Passport:" prefix */}
+                <div style={{display:"flex",alignItems:"center",gap:".5rem",fontSize:".82rem",color:"rgba(255,255,255,.9)"}}><FiFileText size={14}/> {userObj.passport || "—"}</div>
+              </div>
+            </DarkCard>
+
+            {/* Agency fee card — light in light mode, dark in dark mode */}
+            <Card style={{marginTop:"16px", background:C.card, border:"1px solid #E2E8E2", borderRadius:"16px", padding:"1rem", color:C.text}}>
+              <div style={{display:"flex",alignItems:"center",gap:".75rem",marginBottom:".6rem"}}>
+                <div style={{width:36,height:36,borderRadius:10,background:C.green,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><FiCreditCard size={18}/></div>
+                <div>
+                  <div style={{fontWeight:700,fontSize:"1rem",color:C.text}}>Agency fee</div>
+                  <div style={{fontSize:".82rem",color:C.muted}}>
+                    {totalFee != null
+                      ? (collected.toLocaleString("en-US") + " TND of " + totalFee.toLocaleString("en-US") + " TND collected — " + (remaining > 0 ? (remaining.toLocaleString("en-US") + " TND to go") : (<span style={{color:C.green,fontWeight:700}}>Fully paid</span>)))
+                      : (collected.toLocaleString("en-US") + " TND collected — no fee set yet")}
+                  </div>
+                </div>
+              </div>
+              {totalFee != null ? (
+                <div style={{width:"100%",height:6,background:"#EAECEA",borderRadius:999,overflow:"hidden"}}>
+                  <div style={{width:`${Math.min(100, (totalFee ? (collected / totalFee) * 100 : 0))}%`,height:"100%",background:C.green,borderRadius:999}} />
+                </div>
+              ) : null}
+            </Card>
+            </>
+          )}
+            {activeTab === "documents" && (
+            <div style={{marginTop:"24px", width:"100%"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"nowrap",gap:"1rem",marginBottom:".75rem"}}>
+                <div style={{fontWeight:800,fontSize:"1.1rem",color:C.text,whiteSpace:"nowrap",flexShrink:0}}>All documents</div>
+                <div style={{display:"flex",alignItems:"center",gap:".5rem",flexWrap:"nowrap"}}>
+                  <div style={{position:"relative"}}>
+                    <FiSearch size={14} style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",color:C.muted}} />
+                    <input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="Search in documents..." style={{padding:".35rem .6rem .35rem 2rem",borderRadius:999,border:`1px solid ${C.border}`,fontSize:".8rem",outline:"none",minWidth:220,background:"#fff",color:C.text}} />
+                  </div>
+                  <button onClick={()=>setViewGrid(!viewGrid)} aria-label="grid" style={{padding:6,border:`1px solid ${C.border}`,borderRadius:8,background:viewGrid?C.greenSoft||"#E3F2E9":"#fff",color:viewGrid?C.green||"#047857":C.muted}}><FiGrid size={16}/></button>
+                  <button onClick={()=>setViewGrid(!viewGrid)} aria-label="list" style={{padding:6,border:`1px solid ${C.border}`,borderRadius:8,background:!viewGrid?C.greenSoft||"#E3F2E9":"#fff",color:!viewGrid?C.green||"#047857":C.muted}}><FiList size={16}/></button>
+                  <button style={{padding:".35rem .6rem",border:`1px solid ${C.border}`,borderRadius:999,fontSize:".75rem",fontWeight:600,color:C.text,background:"#fff",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4}}><FiFolderPlus size={14}/> New folder</button>
+                  <button style={{padding:".35rem .9rem",border:"none",borderRadius:999,fontSize:".78rem",fontWeight:700,color:"#fff",background:C.green,boxShadow:"0 2px 8px rgba(4,120,87,.25)",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4}}><FiUpload size={14}/> Upload</button>
+                </div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:"12px",marginBottom:"1rem"}}>
+                {folderCategories.map(cat => { const s = folderStatus(cat);
+                  const pillColor = s.status==="Complete"?"#047857":s.status==="Incomplete"?"#EA580C":"#6B7280";
+                  const pillBg = s.status==="Complete"?"#E3F2E9":s.status==="Incomplete"?"#FFF3E8":"#F3F4F6";
+                  return (
+                    <button key={cat} onClick={()=>setSelectedFolder(selectedFolder===cat?null:cat)} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:16,padding:"1rem",boxShadow:"0 2px 12px rgba(20,40,30,.05)",textAlign:"center",cursor:"pointer",position:"relative"}}>
+                      <div style={{position:"absolute",top:8,right:8}}><button style={{background:"none",border:"none",cursor:"pointer",color:C.muted}} onClick={e=>e.stopPropagation()}><FiMoreVertical size={14}/></button></div>
+                      <div style={{fontSize:48,color:s.status==="Empty"?"#9CA3AF":s.status==="Complete"?C.green:"#EA580C",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center"}}><FiFolder size={48}/></div>
+                      <div style={{fontWeight:600,fontSize:".95rem",marginBottom:4}}>{cat}</div>
+                      <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:6,fontSize:".75rem"}}>
+                        <span style={{background:pillBg,color:pillColor,padding:".1rem .45rem",borderRadius:999,fontWeight:700,fontSize:".65rem",textTransform:"uppercase",letterSpacing:".08em"}}>{s.status}</span>
+                        <span style={{color:C.muted}}>{s.count} {s.count===1?"file":"files"}</span>
+                      </div>
+                    </button>
+                  ); })}
+              </div>
+              <Card style={{borderRadius:20,padding:"1rem 1.25rem",background:C.card,border:"1px solid #E2E8E2",color:C.text}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                  <div><div style={{fontWeight:700,fontSize:"1.05rem",color:C.text}}>All documents</div><div style={{fontSize:".8rem",color:C.muted}}>everything on this case, newest first</div></div>
+                </div>
+                <div style={{display:"flex",gap:".5rem",flexWrap:"wrap",marginBottom:12}}>
+                  {["Any type","Anyone","Any state","Last modified"].map(label=>(
+                    <button key={label} style={{padding:".3rem .75rem",border:"1px solid rgba(255,255,255,.15)",borderRadius:999,fontSize:".75rem",fontWeight:600,color:C.muted,background:"rgba(255,255,255,.08)",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4}}>{label}<FiChevronDown size={12}/></button>
+                  ))}
+                </div>
+                <div style={{overflowX:"auto"}}>
+                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:".82rem",color:C.text}}>
+                    <thead>
+                      <tr style={{color:C.muted,fontSize:".65rem",textTransform:"uppercase",letterSpacing:".1em",fontWeight:700,borderBottom:"1px solid #E2E8E2"}}>
+                        <th style={{textAlign:"left",padding:".55rem .3rem"}}>Document</th>
+                        <th style={{textAlign:"left",padding:".55rem .3rem"}}>Folder</th>
+                        <th style={{textAlign:"left",padding:".55rem .3rem"}}>Owner</th>
+                        <th style={{textAlign:"left",padding:".55rem .3rem"}}>Uploaded</th>
+                        <th style={{textAlign:"left",padding:".55rem .3rem"}}>Size</th>
+                        <th style={{textAlign:"left",padding:".55rem .3rem"}}>State</th>
+                        <th style={{textAlign:"left",padding:".55rem .3rem"}}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(documents || []).length === 0 ? (
+                        <tr><td colSpan={7} style={{padding:"1.5rem",textAlign:"center",color:C.muted}}>No documents yet</td></tr>
+                      ) : (documents || []).filter(doc => (!selectedFolder || (doc.category || "").toLowerCase() === selectedFolder.toLowerCase()) && (!searchQuery || (doc.name || doc.fileName || "").toLowerCase().includes(searchQuery.toLowerCase()))).map((doc, i) => (
+                        <tr key={doc.id || i} style={{borderBottom:"1px solid #EAECEA"}}>
+                          <td style={{padding:".6rem .3rem",verticalAlign:"middle"}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <div style={{width:28,height:28,borderRadius:6,background:doc.mimeType&&doc.mimeType.includes("pdf")?"#FDE8E8":"#E3F2E9",color:doc.mimeType&&doc.mimeType.includes("pdf")?"#DC2626":"#047857",display:"flex",alignItems:"center",justifyContent:"center",fontSize:".65rem",fontWeight:800,flexShrink:0}}>{(doc.mimeType||"doc").includes("pdf")?"PDF":(doc.mimeType||"").includes("image")||"jpg".includes(doc.mimeType||"")||"png".includes(doc.mimeType||"")?"IMG":"DOC"}</div>
+                              <div>
+                                <div style={{fontWeight:600,fontSize:".85rem",color:"#fff"}}>{doc.name || doc.fileName || "—"}</div>
+                                <div style={{fontSize:".7rem",color:"rgba(255,255,255,.5)",fontFamily:"monospace"}}>{(doc.fileName || doc.filePath || "—").split("/").pop() || "—"}</div>
+                                {doc.isTranslation ? <span style={{fontSize:".65rem",background:"#DBEAFE",color:"#2563EB",padding:".1rem .35rem",borderRadius:999,fontWeight:600,marginLeft:4}}>Translated</span> : null}
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{padding:".6rem .3rem",verticalAlign:"middle",fontSize:".82rem",color:C.muted}}>{doc.category || "—"}</td>
+                          <td style={{padding:".6rem .3rem",verticalAlign:"middle",fontSize:".82rem",color:C.text}}>{doc.uploaderRole ? (doc.uploaderRole === "USER" ? ((userObj.firstName||"") + (userObj.lastName ? " — student" : "")) : "Admin") : "—"}</td>
+                          <td style={{padding:".6rem .3rem",verticalAlign:"middle",fontSize:".82rem",whiteSpace:"nowrap",color:C.text}}>{doc.createdAt ? new Date(doc.createdAt).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—"}</td>
+                          <td style={{padding:".6rem .3rem",verticalAlign:"middle",fontSize:".82rem",fontFamily:"monospace",whiteSpace:"nowrap",color:C.muted}}>{doc.size ? (doc.size > 1024*1024 ? (doc.size/1024/1024).toFixed(1)+" MB" : (doc.size/1024).toFixed(1)+" KB") : "—"}</td>
+                          <td style={{padding:".6rem .3rem",verticalAlign:"middle",fontSize:".82rem",fontWeight:700,color:doc.status==="VERIFIED"||doc.status==="Verified"?"#4ADE80":doc.status==="PENDING"||doc.status==="Pending"?"#F97316":"#F87171"}}>{doc.status || "—"}</td>
+                          <td style={{padding:".6rem .3rem",verticalAlign:"middle"}}>
+                            <button style={{background:"none",border:"none",cursor:"pointer",color:C.muted}} onClick={()=>alert("Menu: download / rename / verify / reject / delete")}><FiMoreVertical size={16}/></button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+            )}
+          </div>
+        </TwoCol>
+      </Inner>
+    </Wrap>
+  );
+}

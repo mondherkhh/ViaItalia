@@ -96,3 +96,16 @@ const messageService = {
 };
 
 export default messageService;
+
+// Admin messages (messagesAdminRoutes mounted at /api/messages)
+const getConversations = async () => { const r = await axiosInstance.get('/messages-admin/conversations'); return r.data; };
+const getConversation = async (userId) => { const r = await axiosInstance.get(`/messages-admin/conversation/${userId}`); return r.data; };
+const sendMessage = async (userId, content) => { const r = await axiosInstance.post(`/messages-admin/conversation/${userId}`, { content }); return r.data; };
+const markRead = async (userId) => { const r = await axiosInstance.patch(`/messages-admin/conversation/${userId}/read`); return r.data; };
+const getUnreadCount = async () => { const r = await axiosInstance.get('/messages-admin/unread-count'); return r.data; };
+
+messageService.getConversations = getConversations;
+messageService.getConversation = getConversation;
+messageService.sendMessage = sendMessage;
+messageService.markRead = markRead;
+messageService.getUnreadCount = getUnreadCount;

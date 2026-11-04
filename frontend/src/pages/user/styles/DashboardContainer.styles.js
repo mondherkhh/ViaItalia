@@ -33,31 +33,38 @@ export const DashboardContainer = styled.div`
 `;
 
 export const MainContent = styled.div`
-  display: flex;
+  display: grid;
+  grid-template-columns: 250px 1fr;
   min-height: 100vh;
   position: relative;
-  
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 240px 1fr;
+  }
+
   @media (max-width: 768px) {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
 `;
 
 export const ContentArea = styled.div`
   flex: 1;
   padding: 28px 34px 40px;
-  margin-left: 280px;
-  margin-top: 96px;
+  margin-left: 0;
+  margin-top: 0;
+  min-width: 0;
   transition: all 0.3s ease;
-  
+
+  @media (max-width: 1024px) {
+    margin-left: 240px;
+    padding: 24px 28px 36px;
+  }
+
   @media (max-width: 768px) {
     margin-left: 0;
     margin-top: 70px;
     padding: 1rem;
-    padding-bottom: 80px; // Space for bottom nav
-  }
-  
-  @media (max-width: 1024px) {
-    margin-left: 240px;
+    padding-bottom: 80px;
   }
 `;
 
