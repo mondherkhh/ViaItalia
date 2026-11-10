@@ -11,29 +11,61 @@ const HeaderPanel = styled.div`
   box-shadow: 0 8px 30px rgba(0,0,0,0.05);
   margin-bottom: 1.25rem;
   flex-wrap: wrap;
+  min-width: 0;
+  @media (max-width: 700px) {
+    flex-direction: column; align-items: stretch; gap: .7rem;
+    padding: .75rem; border-radius: 16px; margin-bottom: 1rem;
+  }
 `;
 
-const Left = styled.div` display: flex; align-items: center; gap: 1rem; `;
-const TitleArea = styled.div` `;
-const Title = styled.h1` font-size: 1.25rem; font-weight: 800; color: var(--adm-text); margin: 0; line-height: 1.2; `;
-const Subtitle = styled.div` font-size: .78rem; color: var(--adm-muted); margin-top: .15rem; `;
+const Left = styled.div`
+  display: flex; align-items: center; gap: 1rem; min-width: 0;
+  @media (max-width: 700px) { gap: .7rem; }
+`;
+const TitleArea = styled.div` min-width: 0; flex: 1; `;
+const Title = styled.h1`
+  font-size: clamp(1rem, 4.6vw, 1.25rem); font-weight: 800; color: var(--adm-text);
+  margin: 0; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+`;
+const Subtitle = styled.div`
+  font-size: .78rem; color: var(--adm-muted); margin-top: .15rem;
+  @media (max-width: 700px) {
+    font-size: .72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+`;
 
-const Right = styled.div` display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; `;
-const SearchBox = styled.div` position: relative; `;
-const SearchInput = styled.input` width: 260px; padding: .45rem .8rem .45rem 2.2rem; border-radius: 999px; border: 1px solid var(--adm-border); background: var(--adm-surface); color: var(--adm-text); font-size: .82rem; outline: none; transition: all .2s ease; &:focus { border-color: var(--adm-accent); box-shadow: 0 0 0 3px var(--adm-accent-soft); } `;
+const Right = styled.div`
+  display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; min-width: 0;
+  @media (max-width: 700px) { flex-wrap: nowrap; gap: .45rem; width: 100%; }
+`;
+const SearchBox = styled.div`
+  position: relative; flex: 0 1 260px; min-width: 0;
+  @media (max-width: 700px) { flex: 1 1 0; }
+`;
+const SearchInput = styled.input`
+  width: 100%; padding: .45rem .8rem .45rem 2.2rem; border-radius: 999px;
+  border: 1px solid var(--adm-border); background: var(--adm-surface); color: var(--adm-text);
+  font-size: .82rem; outline: none; transition: all .2s ease; height: 38px;
+  &:focus { border-color: var(--adm-accent); box-shadow: 0 0 0 3px var(--adm-accent-soft); }
+`;
 const SearchIcon = styled.span` position: absolute; left: .75rem; top: 50%; transform: translateY(-50%); color: var(--adm-muted); pointer-events: none; `;
 
-const IconBtn = styled.button` width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--adm-border); background: var(--adm-surface); color: var(--adm-text); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s ease; &:hover { background: var(--adm-accent-soft); color: var(--adm-accent); border-color: var(--adm-accent-soft); } `;
+const IconBtn = styled.button`
+  width: 38px; height: 38px; flex-shrink: 0; border-radius: 10px;
+  border: 1px solid var(--adm-border); background: var(--adm-surface); color: var(--adm-text);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s ease;
+  &:hover { background: var(--adm-accent-soft); color: var(--adm-accent); border-color: var(--adm-accent-soft); }
+`;
 
 const InviteBtn = styled.button`
   background: #0B7A3E; color: #fff; font-weight: 700; font-size: 13px;
-  padding: 0 16px; height: 38px; border-radius: 12px;
+  padding: 0 16px; height: 38px; flex-shrink: 0; border-radius: 12px;
   border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(11,122,62,.3);
   transition: all .2s ease; white-space: nowrap;
   display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
   &:hover:not(:disabled) { background: #095f30; }
   &:disabled { opacity: .55; cursor: not-allowed; }
-  @media (max-width: 700px) { padding: 0 11px; width: 38px; }
+  @media (max-width: 700px) { padding: 0; width: 38px; }
 `;
 
 const InviteLabel = styled.span`
@@ -41,40 +73,40 @@ const InviteLabel = styled.span`
 `;
 
 const subtitles = {
-    dashboard: "Tableau de Bord Administrateur",
-    messagerie: "Every conversation with your students, in one place.",
-    annonces: "What changed while you were away, and what needs you now.",
-    users: "Gérer les utilisateurs du système",
-    appointments: "Planifier et suivre les rendez-vous",
-    contracts: "Contrats et accords",
-    dossiers: "Suivi des dossiers étudiants",
-    studyForms: "Formulaires d'étude",
-    payments: "Fees, payments and outstanding balances.",
-    calendar: "Your agency's events and deadlines. Students never see this.",
-    receipts: "Reçus et factures",
-    "university-programs": "Programmes universitaires",
-    reviews: "Avis et retours clients",
-    settings: "Agency profile, team and services.",
-  };
+  dashboard: "Tableau de Bord Administrateur",
+  messagerie: "Every conversation with your students, in one place.",
+  annonces: "What changed while you were away, and what needs you now.",
+  users: "Gérer les utilisateurs du système",
+  appointments: "Planifier et suivre les rendez-vous",
+  contracts: "Contrats et accords",
+  dossiers: "Suivi des dossiers étudiants",
+  studyForms: "Formulaires d'étude",
+  payments: "Fees, payments and outstanding balances.",
+  calendar: "Your agency's events and deadlines. Students never see this.",
+  receipts: "Reçus et factures",
+  "university-programs": "Programmes universitaires",
+  reviews: "Avis et retours clients",
+  settings: "Agency profile, team and services.",
+};
+
+const titles = {
+  dashboard: "Tableau de Bord",
+  messagerie: "Messages",
+  annonces: "Alerts",
+  users: "Utilisateurs",
+  appointments: "Rendez-vous",
+  contracts: "Contrats",
+  dossiers: "Dossiers",
+  studyForms: "Formulaires d'étude",
+  payments: "Payments",
+  calendar: "Calendar",
+  receipts: "Invoices",
+  "university-programs": "University Programs",
+  reviews: "Avis clients",
+  settings: "Settings",
+};
 
 export default function AdminHeaderCard({ activeMenu, theme, toggleTheme, sidebarOpen, onToggleSidebar, notifications = 0, onInvite = () => {} }) {
-  const titles = {
-    dashboard: "Tableau de Bord",
-    messagerie: "Messages",
-    annonces: "Alerts",
-    users: "Utilisateurs",
-    appointments: "Rendez-vous",
-    contracts: "Contrats",
-    dossiers: "Dossiers",
-    studyForms: "Formulaires d'étude",
-    payments: "Payments",
-    calendar: "Calendar",
-    receipts: "Invoices",
-    "university-programs": "University Programs",
-    reviews: "Avis clients",
-    settings: "Settings",
-  };
-  const today = new Date().toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
   return (
     <HeaderPanel>
       <Left>
