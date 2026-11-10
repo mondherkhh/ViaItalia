@@ -10,10 +10,10 @@ const Panel = styled.div`
   color: #12201A; flex-shrink: 0; display: flex; flex-direction: column; gap: .25rem;
   ${DARK} { background: #111915; border-color: rgba(255,255,255,.08); box-shadow: 0 12px 40px rgba(0,0,0,.35); color: #E8F1EB; }
   @media (max-width: 768px) {
-    width: 80vw; max-width: 300px; margin: 0;
+    width: 80vw; max-width: 300px; margin: 0; gap: 0;
     position: fixed; top: 0; left: 0; bottom: 0; z-index: 1000;
-    height: 100vh; height: 100dvh; overflow-y: auto; overscroll-behavior: contain;
-    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+    padding: 1rem .6rem calc(1rem + env(safe-area-inset-bottom));
     border-radius: 0 24px 24px 0;
     transform: translateX(-100%); transition: transform .25s ease; box-shadow: none;
     &.open { transform: translateX(0); box-shadow: 0 12px 40px rgba(0,0,0,.35); }
@@ -32,6 +32,7 @@ const Backdrop = styled.div`
 const Brand = styled.div`
   padding: 0 .75rem 1rem; border-bottom: 1px solid #E2E8E2; margin-bottom: .75rem;
   ${DARK} { border-bottom-color: rgba(255,255,255,.1); }
+  @media (max-width: 768px) { padding-bottom: .7rem; margin-bottom: .4rem; }
 `;
 const BrandTitle = styled.div`
   font-weight: 900; font-size: 1.15rem; letter-spacing: -.02em; color: #12201A;
@@ -39,7 +40,10 @@ const BrandTitle = styled.div`
 `;
 const BrandSub = styled.div` font-size: .65rem; text-transform: uppercase; letter-spacing: .18em; color: #7A8780; margin-top: .25rem; `;
 
-const GroupTitle = styled.div` font-size: .6rem; text-transform: uppercase; letter-spacing: .16em; color: #7A8780; padding: .5rem .75rem .25rem; font-weight: 600; `;
+const GroupTitle = styled.div`
+  font-size: .6rem; text-transform: uppercase; letter-spacing: .16em; color: #7A8780; padding: .5rem .75rem .25rem; font-weight: 600;
+  @media (max-width: 768px) { padding-top: .6rem; }
+`;
 
 const Item = styled.button`
   width: 100%; text-align: left; display: flex; align-items: center; gap: .6rem; padding: .65rem .75rem; border-radius: 10px; border: none; background: transparent; color: #6B7B71; cursor: pointer; font-size: .85rem; font-weight: 500; transition: all .15s ease;
@@ -53,12 +57,13 @@ const Item = styled.button`
   ${DARK}.active { background: rgba(74,222,128,.14); color: #4ADE80; }
   ${DARK} .badge { background: rgba(255,255,255,.08); color: #B4C2BA; }
   ${DARK} .badge-red { background: rgba(242,139,139,.18); color: #F28B8B; }
-  @media (max-width: 768px) { padding: .8rem .75rem; }
+  @media (max-width: 768px) { padding: .55rem .7rem; font-size: .88rem; }
 `;
 
 const ProfileCard = styled.div`
   margin-top: auto; padding: .75rem; border-top: 1px solid #E2E8E2; display: flex; align-items: center; gap: .6rem;
   ${DARK} { border-top-color: rgba(255,255,255,.1); }
+  @media (max-width: 768px) { margin-top: .5rem; padding: .6rem .4rem 0; }
 `;
 const Avatar = styled.div`
   width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #047857, #0B7A43); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .85rem; flex-shrink: 0; position: relative;
@@ -71,7 +76,10 @@ const ProfileName = styled.div`
   ${DARK} { color: #E8F1EB; }
 `;
 const ProfileEmail = styled.div` font-size: .7rem; color: #7A8780; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; `;
-const Version = styled.div` font-size: .6rem; color: #7A8780; padding: 0 .75rem .5rem; text-align: center; `;
+const Version = styled.div`
+  font-size: .6rem; color: #7A8780; padding: 0 .75rem .5rem; text-align: center;
+  @media (max-width: 768px) { padding: .5rem 0 0; }
+`;
 const LogoutBtn = styled.button`
   background: none; border: none; color: #7A8780; cursor: pointer; font-size: .8rem; text-decoration: underline; white-space: nowrap; flex-shrink: 0;
   ${DARK}:hover { color: #E8F1EB; }
