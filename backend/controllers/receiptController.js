@@ -24,15 +24,22 @@ const createReceipt = async (req, res) => {
     const userId = Number(req.body.userId), amount = Number(req.body.amount);
     const paymentMethod = req.body.paymentMethod;
     const paymentDate = req.body.paymentDate ? new Date(req.body.paymentDate) : new Date();
-    if (!Number.isInteger(userId) || !Number.isFinite(amount) || amount <= 0 || !['ESPECE', 'VIREMENT'].includes(paymentMethod) || Number.isNaN(paymentDate.getTime())) return res.status(400).json({ success:false, message:'Client, montant, méthode et date de paiement sont obligatoires.' });
+    const note = req.body.note || '';
+    if (!Number.isInteger(userId) || !Number.isFinite(amount) || amount <= 0 || !['ESPECE', 'VIREMENT'].includes(paymentMethod) || Number.isNaN(paymentDate.getTime())) return res.status(400).json({ success:false, message:'Client, montant, méthode et date sont obligatoires.' });
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { id:true, firstName:true, lastName:true, email:true } });
     if (!user) return res.status(404).json({ success:false, message:'Client introuvable.' });
-    const receiptNumber = `RC-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}`;
-    const receipt = await prisma.receipt.create({ data: { receiptNumber, amount, paymentMethod, paymentDate, userId }, include: includeUser });
-    await prisma.notification.create({ data: { userId, content: `Un nouveau reçu ${receipt.receiptNumber} de ${amount.toFixed(2)} DT a été ajouté à votre compte.` } });
-    sendReceiptEmails(receipt).catch(error => console.error('Receipt email error:', error.message));
-    res.status(201).json({ success:true, data:receipt });
-  } catch (error) { console.error(error); res.status(500).json({ success:false, message:'Erreur lors de la création du reçu.' }); }
+    const count = await prisma.receipt.count();
+    const seq = String(count + 1).padStart(4, '0');
+    const receiptNumber = `REC-2026-${seq}`;
+    const receipt = await prisma.receipt.create({ data: { receiptNumber, amount, paymentMethod, paymentDate, userId } });
+    const receiptWithUser = await prisma.receipt.findUnique({ where: { id: receipt.id }, include: includeUser });
+    await prisma.notification.create({ data: { userId, content: `Nouveau reçu ${receiptWithUser.receiptNumber} de ${amount.toFixed(2)} DT ajouté.` } }).catch(() => {});
+    sendReceiptEmails(receiptWithUser).catch(error => console.error('Receipt email error:', error.message));
+    res.status(201).json({ success:true, data:receiptWithUser });
+  } catch (error) {
+    console.error('RECEIPT CREATE ERROR:', error);
+    res.status(500).json({ success: false, message: 'Impossible de créer le reçu.' });
+  }
 };
 
 const getReceipts = async (req, res) => {

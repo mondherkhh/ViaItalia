@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const authMiddleware = require("../middlewares/authMiddleware");
-const { requireAdmin, requireSelfOrAdmin } = require("../middlewares/roleMiddleware");
+const { requireStaff, requireSelfOrAdmin } = require("../middlewares/roleMiddleware");
 const {
   createAppointment,
   getAllAppointments,
@@ -23,7 +23,7 @@ router.use(authMiddleware);
 router.post("/", createAppointment);
 
 // Get all appointments (admin only)
-router.get("/", requireAdmin, getAllAppointments);
+router.get("/", requireStaff, getAllAppointments);
 
 // Get appointments by user ID (owner or admin) — declared before /:id
 router.get("/user/:userId", requireSelfOrAdmin, getAppointmentsByUserId);
@@ -42,10 +42,10 @@ router.delete("/:id", deleteAppointment);
 router.get("/slots/available", getAvailableSlots);
 
 // Create new time slot (admin only)
-router.post("/slots", requireAdmin, createTimeSlot);
+router.post("/slots", requireStaff, createTimeSlot);
 
 // Delete time slot (admin only)
-router.delete("/slots/:id", requireAdmin, deleteTimeSlot);
+router.delete("/slots/:id", requireStaff, deleteTimeSlot);
 
 // Get time slots by date
 router.get("/slots/date/:date", getSlotsByDate);

@@ -2,10 +2,10 @@ const express = require("express");
 const router = express.Router();
 const emailService = require("../services/emailService");
 const authMiddleware = require("../middlewares/authMiddleware");
-const { requireAdmin } = require("../middlewares/roleMiddleware");
+const { requireStaff } = require("../middlewares/roleMiddleware");
 
 // All email utility endpoints are admin-only
-router.use(authMiddleware, requireAdmin);
+router.use(authMiddleware, requireStaff);
 
 // Test email configuration
 router.post("/test", async (req, res) => {

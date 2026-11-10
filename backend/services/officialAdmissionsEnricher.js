@@ -2133,11 +2133,14 @@ const currentOpening = value => isInTargetAcademicCycle(value);
 
   // Keep every verified round. The legacy selected pair remains populated for
   // backwards compatibility, while this list is authoritative for the UI.
-  const admissionWindows = (verifiedWindows.length ? verifiedWindows : windowPairs)
+  const fallbackWindow = (dates.openingDate || dates.closingDate || fee)
+    ? [{ openingDate: dates.openingDate || null, closingDate: dates.closingDate || null, label: 'Résultat officiel à vérifier' }]
+    : [];
+  const admissionWindows = (verifiedWindows.length ? verifiedWindows : (windowPairs.length ? windowPairs : fallbackWindow))
     .map((pair, index) => {
-      const opening = candidateFor('opening', pair.openingDate);
-      const closing = candidateFor('closing', pair.closingDate);
-      if (!opening || !closing) return null;
+      const opening = pair.openingDate ? candidateFor('opening', pair.openingDate) : null;
+      const closing = pair.closingDate ? candidateFor('closing', pair.closingDate) : null;
+      if (!opening && !closing && !fee) return null;
       const label = String(pair.label || '').trim() || `Call ${index + 1}`;
             const callNumberWords = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 };
       const callMatch = label.match(/(?:call|round|session|intake|appell?)\s*(?:one|two|three|four|five|six|1|2|3|4|5|6)/i);
@@ -2149,10 +2152,13 @@ const currentOpening = value => isInTargetAcademicCycle(value);
           : null;
 
       const placesType = /unlimited/i.test(label) ? 'Unlimited' : /limited/i.test(label) ? 'Limited' : null;
-      const openingEvidence = makeWindowEvidence('opening', opening, pair.openingDate);
-      const closingEvidence = makeWindowEvidence('closing', closing, pair.closingDate);
-      if (!openingEvidence || !closingEvidence) return null;
-      const confidence = Math.max(Number(openingEvidence.confidence) || 0, Number(closingEvidence.confidence) || 0, Number(firstFeeProof?.proof?.confidence) || 0);
+      const openingEvidence = opening ? makeWindowEvidence('opening', opening, pair.openingDate) : null;
+      const closingEvidence = closing ? makeWindowEvidence('closing', closing, pair.closingDate) : null;
+      const feeEvidence = firstFeeProof?.proof
+        ? { field: 'fee', value: fee, sourceUrl: firstFeeProof.proof.url, matchedText: firstFeeProof.proof.matchedText, pageNumber: firstFeeProof.proof.pageNumber || null, sourceIsPdf: Boolean(firstFeeProof.proof.isPdf), confidence: Number(firstFeeProof.proof.confidence) || 0 }
+        : null;
+      if (!openingEvidence && !closingEvidence && !feeEvidence) return null;
+      const confidence = Math.max(Number(openingEvidence?.confidence) || 0, Number(closingEvidence?.confidence) || 0, Number(feeEvidence?.confidence) || 0);
       return {
         label,
         callNumber,
@@ -2160,11 +2166,11 @@ const currentOpening = value => isInTargetAcademicCycle(value);
         openingDate: pair.openingDate,
         closingDate: pair.closingDate,
         applicationFee: fee,
-        sourceUrl: openingEvidence.sourceUrl || closingEvidence.sourceUrl || firstFeeProof?.proof?.url || null,
-        sourceName: openingEvidence.sourceIsPdf || closingEvidence.sourceIsPdf ? 'Official faculty page / PDF' : 'Official faculty admissions page',
+        sourceUrl: openingEvidence?.sourceUrl || closingEvidence?.sourceUrl || feeEvidence?.sourceUrl || null,
+        sourceName: openingEvidence?.sourceIsPdf || closingEvidence?.sourceIsPdf || feeEvidence?.sourceIsPdf ? 'Official faculty page / PDF' : 'Official faculty admissions page',
         openingEvidence,
         closingEvidence,
-        feeEvidence: firstFeeProof?.proof ? { field: 'fee', value: fee, sourceUrl: firstFeeProof.proof.url, matchedText: firstFeeProof.proof.matchedText, pageNumber: firstFeeProof.proof.pageNumber || null, sourceIsPdf: Boolean(firstFeeProof.proof.isPdf), confidence: Number(firstFeeProof.proof.confidence) || 0 } : null,
+        feeEvidence,
         confidence
       };
     })

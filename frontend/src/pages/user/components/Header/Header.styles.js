@@ -128,20 +128,21 @@ export const NotificationContainer = styled.div`
   position: relative;
 `;
 
+/* ⬇ CORRIGÉ : le texte "Mode sombre" (dans un <span>) est masqué, seule l'icône reste */
 export const ThemeToggle = styled.button`
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  min-height: 42px;
-  padding: 0.65rem 0.9rem;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
   border: 1px solid var(--client-border, #21364c);
   border-radius: 12px;
   background: var(--client-surfaceSoft, #0d1c2d);
   color: var(--client-text, #e8eef7);
-  font-size: 0.82rem;
-  font-weight: 700;
   cursor: pointer;
   transition: all 0.25s ease;
+  overflow: hidden;
 
   &:hover {
     border-color: #20c875;
@@ -150,24 +151,18 @@ export const ThemeToggle = styled.button`
   }
 
   span {
-    font-size: 1rem;
-    line-height: 1;
+    display: none;
   }
 
   svg {
-    width: 1rem;
-    height: 1rem;
+    width: 1.15rem;
+    height: 1.15rem;
     flex: 0 0 auto;
   }
 
   @media (max-width: 768px) {
-    min-height: 38px;
-    padding: 0.55rem 0.7rem;
-    font-size: 0;
-
-    span {
-      font-size: 1.1rem;
-    }
+    width: 38px;
+    height: 38px;
   }
 `;
 

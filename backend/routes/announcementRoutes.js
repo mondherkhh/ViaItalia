@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const authMiddleware = require("../middlewares/authMiddleware");
-const { requireAdmin } = require("../middlewares/roleMiddleware");
+const { requireStaff } = require("../middlewares/roleMiddleware");
 const {
   createAnnouncement,
   getAllAnnouncements,
@@ -16,10 +16,10 @@ const {
 router.use(authMiddleware);
 
 // Create announcement (Admin only)
-router.post("/", requireAdmin, createAnnouncement);
+router.post("/", requireStaff, createAnnouncement);
 
 // Get all announcements (Admin only - includes inactive)
-router.get("/admin", requireAdmin, getAllAnnouncements);
+router.get("/admin", requireStaff, getAllAnnouncements);
 
 // Get active announcements (any authenticated user)
 router.get("/active", getActiveAnnouncements);
@@ -28,12 +28,12 @@ router.get("/active", getActiveAnnouncements);
 router.get("/:id", getAnnouncementById);
 
 // Update announcement (Admin only)
-router.put("/:id", requireAdmin, updateAnnouncement);
+router.put("/:id", requireStaff, updateAnnouncement);
 
 // Delete announcement (Admin only)
-router.delete("/:id", requireAdmin, deleteAnnouncement);
+router.delete("/:id", requireStaff, deleteAnnouncement);
 
 // Toggle announcement active status (Admin only)
-router.patch("/:id/toggle", requireAdmin, toggleAnnouncementStatus);
+router.patch("/:id/toggle", requireStaff, toggleAnnouncementStatus);
 
 module.exports = router;

@@ -141,9 +141,10 @@ const createMessage = async (req, res) => {
       finalContent = null;
     }
     
+    const serverSender = req.user?.role === "ADMIN" ? "ADMIN" : "USER";
     const messageData = {
       content: finalContent,
-      sender,
+      sender: serverSender,
       userId: parsedUserId,
       ...fileData
     };
@@ -154,7 +155,7 @@ const createMessage = async (req, res) => {
     const message = await prisma.message.create({
       data: {
         content: finalContent,
-        sender,
+        sender: serverSender,
         fileName: fileData.fileName || null,
         filePath: fileData.filePath || null,
         fileType: fileData.fileType || null,
@@ -180,7 +181,7 @@ const createMessage = async (req, res) => {
     console.log('Message created successfully:', message);
 
     // Send email notification if admin sent the message
-    if (sender === 'ADMIN') {
+    if (serverSender === 'ADMIN') {
       console.log('Admin sent message, sending email notification...');
       
       try {

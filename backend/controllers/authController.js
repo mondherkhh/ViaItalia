@@ -9,7 +9,10 @@ function publicUser(user) {
     lastName: user.lastName,
     email: user.email,
     role: user.role,
-    isApproved: user.role === 'ADMIN' || user.isApproved === true,
+    isAgent: user.role === "AGENT" || (user.isAgent || false),
+    officeId: user.officeId || null,
+    allowedSections: user.allowedSections ? String(user.allowedSections).split(",").filter(Boolean) : [],
+    isApproved: user.role === 'ADMIN' || user.role === 'AGENT' || user.isApproved === true,
     passport: user.passport,
     address: user.address,
     phoneNumber: user.phoneNumber,
@@ -53,6 +56,8 @@ const register = async (req, res) => {
     const phoneNumber = String(req.body?.phoneNumber || '').trim();
     const image = req.body?.image || null;
 
+    const inviteToken = req.body?.inviteToken ? String(req.body.inviteToken).trim() : null;
+
     if (!firstName || !lastName || !email || !password || !passport || !address || !phoneNumber) {
       return res.status(400).json({ success: false, message: 'Tous les champs obligatoires doivent être remplis.' });
     }
@@ -64,12 +69,31 @@ const register = async (req, res) => {
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) return res.status(409).json({ success: false, message: 'Un utilisateur avec cette adresse email existe déjà.' });
 
+    // Optional invite: validate before creating the account
+    let invite = null;
+    if (inviteToken) {
+      invite = await prisma.studentInvite.findUnique({ where: { token: inviteToken } });
+      if (!invite) return res.status(400).json({ success: false, message: 'Invitation invalide.' });
+      if (invite.usedAt) return res.status(400).json({ success: false, message: 'Invitation déjà utilisée.' });
+      if (new Date(invite.expiresAt) < new Date()) return res.status(400).json({ success: false, message: 'Invitation expirée.' });
+      if (invite.email && invite.email.toLowerCase() !== email) {
+        return res.status(400).json({ success: false, message: `Cette invitation est réservée à l’adresse ${invite.email}.` });
+      }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
       data: { firstName, lastName, email, password: hashedPassword, passport, address, phoneNumber, image, role: 'USER', isApproved: false }
     });
 
     await createUserDossier(user);
+
+    if (invite) {
+      await prisma.studentInvite.update({
+        where: { id: invite.id },
+        data: { usedAt: new Date(), userId: user.id }
+      });
+    }
     return res.status(201).json({
       success: true,
       message: 'Compte créé. Remplissez le formulaire puis attendez la validation de l’administrateur.',
@@ -106,7 +130,7 @@ const login = async (req, res) => {
 
     if (!process.env.JWT_SECRET) return res.status(500).json({ success: false, message: 'Configuration serveur incomplète.' });
 
-    const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    const token = jwt.sign({ userId: user.id, role: user.role, isAgent: user.role === "AGENT" || (user.isAgent || false), officeId: user.officeId || null, allowedSections: user.allowedSections ? String(user.allowedSections).split(",").filter(Boolean) : [] }, process.env.JWT_SECRET, { expiresIn: '1d' });
     return res.status(200).json({ success: true, token, user: publicUser(user), userId: user.id, role: user.role });
   } catch (error) {
     console.error('Login error:', error);
@@ -118,10 +142,11 @@ const login = async (req, res) => {
 const getAllUsers = async (req, res) => {
   try {
     const users = await prisma.user.findMany({
-      select: { id: true, firstName: true, lastName: true, email: true, role: true, isApproved: true, createdAt: true },
+      where: { role: "USER" },
+      select: { id: true, firstName: true, lastName: true, email: true, role: true, isApproved: true, officeId: true, createdAt: true },
       orderBy: { createdAt: 'desc' }
     });
-    return res.status(200).json({ success: true, data: users });
+    return res.status(200).json({ success: true, data: users, count: users.length });
   } catch (error) {
     console.error('Get users error:', error);
     return res.status(500).json({ success: false, message: 'Erreur lors de la récupération des utilisateurs.' });
@@ -131,6 +156,7 @@ const getAllUsers = async (req, res) => {
 // PATCH /api/auth/users/:id/access — ADMIN uniquement
 const updateUserAccess = async (req, res) => {
   try {
+    if (req.user?.role !== "ADMIN") return res.status(403).json({ success: false, message: "Accès réservé au propriétaire." });
     const id = Number.parseInt(req.params.id, 10);
     const isApproved = req.body?.isApproved === true;
     if (!Number.isInteger(id)) return res.status(400).json({ success: false, message: 'ID utilisateur invalide.' });
@@ -178,7 +204,7 @@ const createUser = async (req, res) => {
     const address = String(req.body?.address || '').trim();
     const phoneNumber = String(req.body?.phoneNumber || '').trim();
     const image = req.body?.image || null;
-    const role = req.body?.role === 'ADMIN' ? 'ADMIN' : 'USER';
+    const role = req.body?.role === 'ADMIN' ? 'ADMIN' : (req.body?.role === 'AGENT' ? 'AGENT' : 'USER');
 
     if (!firstName || !lastName || !email || !password || !passport || !address || !phoneNumber) return res.status(400).json({ success: false, message: 'Tous les champs obligatoires doivent être remplis.' });
     if (!validEmail(email)) return res.status(400).json({ success: false, message: 'Adresse email invalide.' });
@@ -201,8 +227,11 @@ const searchUsers = async (req, res) => {
     const query = String(req.query?.query || '').trim();
     if (!query) return res.status(400).json({ success: false, message: 'Veuillez fournir un terme de recherche.' });
     const users = await prisma.user.findMany({
-      where: { OR: [{ firstName: { contains: query } }, { lastName: { contains: query } }, { email: { contains: query } }] },
-      select: { id: true, firstName: true, lastName: true, email: true, role: true, isApproved: true, createdAt: true },
+      where: {
+        role: "USER",
+        OR: [{ firstName: { contains: query } }, { lastName: { contains: query } }, { email: { contains: query } }]
+      },
+      select: { id: true, firstName: true, lastName: true, email: true, role: true, isApproved: true, officeId: true, createdAt: true },
       orderBy: { createdAt: 'desc' }
     });
     return res.status(200).json({ success: true, data: users, count: users.length });
@@ -264,4 +293,15 @@ const changePassword = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getAllUsers, updateUserAccess, deleteUser, createUser, searchUsers, updateUser, changePassword };
+const getMe = async (req, res) => {
+  try {
+    const userId = req.user?.userId || req.user?.id;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ success: false, message: "Non trouvé" });
+    res.json({ success: true, data: publicUser(user) });
+  } catch (e) {
+    res.status(500).json({ success: false, message: "Erreur" });
+  }
+};
+
+module.exports = { register, login, getAllUsers, updateUserAccess, deleteUser, createUser, searchUsers, updateUser, changePassword, getMe };

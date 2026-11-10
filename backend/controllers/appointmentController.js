@@ -548,7 +548,6 @@ const getAvailableSlots = async (req, res) => {
     
     const timeSlots = await prisma.timeSlot.findMany({
       where: {
-        isAvailable: true,
         date: {
           gte: new Date()
         }

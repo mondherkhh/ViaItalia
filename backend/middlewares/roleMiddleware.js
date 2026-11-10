@@ -1,12 +1,23 @@
 // Role-based authorization middlewares.
 // These run AFTER authMiddleware, which sets req.user = { userId, role }.
 
-// Allow only administrators.
+// Allow only administrators (owner).
 const requireAdmin = (req, res, next) => {
   if (!req.user || req.user.role !== "ADMIN") {
     return res.status(403).json({
       success: false,
       message: "Accès refusé - Réservé aux administrateurs",
+    });
+  }
+  next();
+};
+
+// Allow staff: ADMIN or AGENT.
+const requireStaff = (req, res, next) => {
+  if (!req.user || (req.user.role !== "ADMIN" && req.user.role !== "AGENT")) {
+    return res.status(403).json({
+      success: false,
+      message: "Accès refusé - Réservé au personnel",
     });
   }
   next();
@@ -31,4 +42,4 @@ const requireSelfOrAdmin = (req, res, next) => {
   });
 };
 
-module.exports = { requireAdmin, requireSelfOrAdmin };
+module.exports = { requireAdmin, requireSelfOrAdmin, requireStaff };

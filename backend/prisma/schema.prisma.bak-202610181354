@@ -1,0 +1,32 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "windows", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model CalendarEvent {
+  id             Int       @id @default(autoincrement())
+  title          String
+  notes          String?   @db.Text
+  kind           String    @default("EVENT") // EVENT | DEADLINE
+  allDay         Boolean   @default(false)
+  startsAt       DateTime
+  endsAt         DateTime?
+  location       String?
+  studentId      Int?
+  ownerId        Int?
+  remindMinutes Int?
+  repeatRule     String?   // DAILY | WEEKLY | MONTHLY
+  done           Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("calendarevent")
+  @@index([studentId])
+  @@index([ownerId])
+  @@index([startsAt])
+}

@@ -1,0 +1,142 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "windows", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model CalendarEvent {
+  id             Int       @id @default(autoincrement())
+  title          String
+  notes          String?   @db.Text
+  kind           String    @default("EVENT") // EVENT | DEADLINE
+  allDay         Boolean   @default(false)
+  startsAt       DateTime
+  endsAt         DateTime?
+  location       String?
+  studentId      Int?
+  ownerId        Int?
+  remindMinutes Int?
+  repeatRule     String?   // DAILY | WEEKLY | MONTHLY
+  done           Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("calendarevent")
+  @@index([studentId])
+  @@index([ownerId])
+  @@index([startsAt])
+}
+
+enum Role { USER ADMIN }
+
+model User {
+  id Int @id @default(autoincrement())
+  firstName String
+  lastName String
+  email String @unique
+  password String
+  passport String?
+  address String?
+  phoneNumber String?
+  image String?
+  role Role @default(USER)
+  isApproved Boolean @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Appointment {
+  id Int @id @default(autoincrement())
+  date DateTime
+  time String?
+  userId Int?
+  status String @default("PENDING")
+  etat String @default("PRESENTIEL")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Dossier {
+  id Int @id @default(autoincrement())
+  title String
+  userId Int?
+  status String @default("PENDING")
+  stage String @default("EN_COURS")
+  traductionStatus String @default("EN_COURS")
+  inscriptionStatus String @default("EN_COURS")
+  visaStatus String @default("EN_COURS")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StudyForm {
+  id Int @id @default(autoincrement())
+  firstName String
+  lastName String
+  email String @unique
+  country String?
+  program String?
+  status String @default("EN_COURS")
+  createdAt DateTime @default(now())
+}
+
+model Announcement {
+  id Int @id @default(autoincrement())
+  title String
+  content String @db.Text
+  type String @default("INFO")
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Contract {
+  id Int @id @default(autoincrement())
+  filePath String?
+  status String @default("PENDING")
+  userId Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id Int @id @default(autoincrement())
+  rating Int
+  comment String?
+  status String @default("PENDING")
+  userId Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Payment {
+  id Int @id @default(autoincrement())
+  amount Float
+  status String @default("PENDING")
+  userId Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Receipt {
+  id Int @id @default(autoincrement())
+  numero String @unique
+  date DateTime
+  amount Float
+  paymentMethod String
+  userId Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Message {
+  id Int @id @default(autoincrement())
+  content String @db.Text
+  sender String
+  userId Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

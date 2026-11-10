@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const authMiddleware = require("../middlewares/authMiddleware");
-const { requireAdmin, requireSelfOrAdmin } = require("../middlewares/roleMiddleware");
+const { requireStaff, requireSelfOrAdmin } = require("../middlewares/roleMiddleware");
 const {
   createUniversityInfo,
   getAllUniversityInfo,
@@ -18,7 +18,7 @@ router.use(authMiddleware);
 router.post("/", createUniversityInfo);
 
 // Get all university info (admin only)
-router.get("/", requireAdmin, getAllUniversityInfo);
+router.get("/", requireStaff, getAllUniversityInfo);
 
 // Get university info by ID
 router.get("/:id", getUniversityInfoById);

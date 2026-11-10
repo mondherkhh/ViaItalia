@@ -58,6 +58,7 @@ const ProfileSection = () => {
   const [imagePreview, setImagePreview] = useState('');
   const [userDataLoading, setUserDataLoading] = useState(true);
   const contentRef = useRef(null);
+  const containerRef = useRef(null);
 
   // Remove scrollbars completely
   useEffect(() => {
@@ -101,6 +102,28 @@ const ProfileSection = () => {
       document.head.removeChild(style);
     };
   }, []);
+
+  // Mobile: compense le décalage ajouté par le layout parent
+  useEffect(() => {
+    const fixOffset = () => {
+      const el = containerRef.current;
+      if (!el) return;
+
+      // reset avant de mesurer
+      el.style.marginLeft = '';
+      el.style.width = '';
+
+      if (window.innerWidth > 768) return; // bureau: rien à faire
+
+      const left = el.getBoundingClientRect().left;
+      el.style.marginLeft = `${-left}px`;
+      el.style.width = `${window.innerWidth}px`;
+    };
+
+    fixOffset();
+    window.addEventListener('resize', fixOffset);
+    return () => window.removeEventListener('resize', fixOffset);
+  }, [userDataLoading]);
 
   // Initialize form with user data
   useEffect(() => {
@@ -282,7 +305,7 @@ const ProfileSection = () => {
 
   if (userDataLoading) {
     return (
-      <ProfileContainer>
+      <ProfileContainer ref={containerRef}>
         <div style={{ 
           display: 'flex', 
           justifyContent: 'center', 
@@ -310,7 +333,7 @@ const ProfileSection = () => {
   }
 
   return (
-    <ProfileContainer>
+    <ProfileContainer ref={containerRef}>
       <ProfileHeader>
         <ProfileTitle>
           <><FiUser className="inline-block mr-2 align-middle" size={22} aria-hidden="true" />Mon Profil</>

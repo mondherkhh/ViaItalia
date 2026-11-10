@@ -1,0 +1,23 @@
+CREATE TABLE `UniversityProgram` (
+  `id` INTEGER NOT NULL AUTO_INCREMENT,
+  `university` VARCHAR(191) NOT NULL,
+  `city` VARCHAR(191) NULL,
+  `programName` VARCHAR(191) NOT NULL,
+  `level` VARCHAR(191) NULL,
+  `language` VARCHAR(191) NULL,
+  `field` VARCHAR(191) NOT NULL,
+  `openingDate` DATETIME(3) NULL,
+  `closingDate` DATETIME(3) NULL,
+  `applicationFee` VARCHAR(191) NULL,
+  `tuition` VARCHAR(191) NULL,
+  `sourceName` VARCHAR(191) NOT NULL,
+  `sourceUrl` TEXT NOT NULL,
+  `lastVerifiedAt` DATETIME(3) NOT NULL,
+  `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updatedAt` DATETIME(3) NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `UniversityProgram_field_idx` (`field`),
+  INDEX `UniversityProgram_closingDate_idx` (`closingDate`),
+  INDEX `UniversityProgram_university_idx` (`university`),
+  INDEX `UniversityProgram_lastVerifiedAt_idx` (`lastVerifiedAt`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

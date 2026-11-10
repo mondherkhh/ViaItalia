@@ -10,6 +10,80 @@ const C = {
   green: "#0B7A3E", dark: "#07201F", amber: "#C0902F", red: "#C62828"
 };
 
+// Sélecteur du thème sombre (même logique que le dashboard)
+const D = ':is(body[data-theme="dark"], body.theme-dark)';
+
+const DARK_CSS = `
+${D} .uni-root {
+  background: transparent !important;
+  --u-card: #0F2A24;
+  --u-field: #12342C;
+  --u-border: #24463B;
+  --u-text: #E8F1EC;
+  --u-muted: #9DB0A6;
+}
+
+/* Résumé */
+${D} .uni-root .uni-pill { color: var(--u-muted) !important; }
+
+/* Bannière choix final */
+${D} .uni-root .uni-banner { background: rgba(74,222,128,.12) !important; border-color: rgba(74,222,128,.30) !important; }
+${D} .uni-root .uni-banner-text { color: var(--u-text) !important; }
+
+/* Cartes */
+${D} .uni-root .uni-card { background: var(--u-card) !important; }
+${D} .uni-root .uni-card:not(.uni-final) { border-color: var(--u-border) !important; }
+${D} .uni-root .uni-name { color: var(--u-text) !important; }
+${D} .uni-root .uni-meta,
+${D} .uni-root .uni-date { color: var(--u-muted) !important; }
+${D} .uni-root .uni-dot { background: var(--u-border) !important; }
+${D} .uni-root .uni-lang { background: rgba(255,255,255,.08) !important; color: var(--u-text) !important; }
+${D} .uni-root .uni-final-tag { background: rgba(74,222,128,.16) !important; color: #4ADE80 !important; }
+
+/* Badges de statut */
+${D} .uni-root .st-APPLIED { background: rgba(245,180,60,.18) !important; color: #F5C56B !important; }
+${D} .uni-root .st-ACCEPTED { background: rgba(74,222,128,.16) !important; color: #4ADE80 !important; }
+${D} .uni-root .st-REJECTED { background: rgba(239,83,80,.16) !important; color: #F28B8B !important; }
+${D} .uni-root .st-AWAITING_PAYMENT { background: rgba(255,255,255,.08) !important; color: #B4C2BA !important; }
+
+/* Menu ⋮ */
+${D} .uni-root .uni-kebab { color: var(--u-muted) !important; }
+${D} .uni-root .uni-menu { background: var(--u-field) !important; border-color: var(--u-border) !important; box-shadow: 0 8px 24px rgba(0,0,0,.45) !important; }
+${D} .uni-root .uni-menu-item { color: var(--u-text) !important; border-bottom-color: var(--u-border) !important; }
+${D} .uni-root .uni-menu-item:hover { background: rgba(255,255,255,.06) !important; }
+
+/* Bloc lettre d'admission */
+${D} .uni-root .uni-docstrip { background: var(--u-field) !important; border-color: var(--u-border) !important; }
+${D} .uni-root .uni-doc-title { color: var(--u-text) !important; }
+${D} .uni-root .uni-doc-sub { color: var(--u-muted) !important; }
+${D} .uni-root .uni-badge { background: rgba(74,222,128,.16) !important; color: #4ADE80 !important; }
+
+/* Boutons d'action (Replace, etc.) */
+${D} .uni-root .uni-action:not(.uni-accept):not(.uni-reject) {
+  background: var(--u-field) !important; color: var(--u-text) !important; border-color: var(--u-border) !important;
+}
+${D} .uni-root .uni-action:not(.uni-accept):not(.uni-reject):hover { background: #1B4A3A !important; }
+${D} .uni-root .uni-reject { background: rgba(239,83,80,.16) !important; color: #F28B8B !important; border-color: rgba(239,83,80,.30) !important; }
+
+/* Etat vide / chargement / erreur */
+${D} .uni-root .uni-empty { color: var(--u-muted) !important; }
+${D} .uni-root .uni-empty-title { color: var(--u-text) !important; }
+${D} .uni-root .uni-empty-sub { color: var(--u-muted) !important; }
+${D} .uni-root .uni-skel-card { background: var(--u-card) !important; border-color: var(--u-border) !important; }
+${D} .uni-root .uni-skel { background: rgba(255,255,255,.08) !important; }
+
+/* Popup "New application" */
+${D} .uni-overlay { background: rgba(0,0,0,.62) !important; }
+${D} .uni-modal { background: var(--u-card, #0F2A24) !important; border: 1px solid #24463B; box-shadow: 0 12px 40px rgba(0,0,0,.55) !important; }
+${D} .uni-modal-title { color: #E8F1EC !important; }
+${D} .uni-label { color: #9DB0A6 !important; }
+${D} .uni-input { background: #12342C !important; color: #E8F1EC !important; border-color: #24463B !important; }
+${D} .uni-input::placeholder { color: #7F948A; }
+${D} .uni-input option { background: #12342C; color: #E8F1EC; }
+${D} .uni-modal-btn:not(.uni-primary) { background: #12342C !important; color: #E8F1EC !important; border-color: #24463B !important; }
+${D} .uni-error { color: #F28B8B !important; }
+`;
+
 const Wrap = styled.div` background: ${C.bg}; padding: .75rem; font-family: system-ui, Segoe UI, sans-serif; `;
 const Inner = styled.div` max-width: 1200px; margin: 0 auto; `;
 
@@ -153,24 +227,25 @@ export default function UniversitiesTab({ loading = false, error = null, onReloa
   };
 
   return (
-    <Wrap>
+    <Wrap className="uni-root">
+      <style>{DARK_CSS}</style>
       <Inner>
         {/* A) Summary row */}
         <SummaryRow>
           <Pills>
-            <Pill><Dot style={{ background: "#B0BEC5" }} />{counts.awaiting} Awaiting payment</Pill>
-            <Pill><Dot style={{ background: "#C0902F" }} />{counts.applied} Applied</Pill>
-            <Pill><Dot style={{ background: "#0B7A3E" }} />{counts.accepted} Accepted</Pill>
-            <Pill><Dot style={{ background: "#B0BEC5" }} />{counts.rejected} Rejected</Pill>
+            <Pill className="uni-pill"><Dot style={{ background: "#B0BEC5" }} />{counts.awaiting} Awaiting payment</Pill>
+            <Pill className="uni-pill"><Dot style={{ background: "#C0902F" }} />{counts.applied} Applied</Pill>
+            <Pill className="uni-pill"><Dot style={{ background: "#0B7A3E" }} />{counts.accepted} Accepted</Pill>
+            <Pill className="uni-pill"><Dot style={{ background: "#B0BEC5" }} />{counts.rejected} Rejected</Pill>
           </Pills>
           <NewBtn onClick={openNew}><FiPlus size={16}/> New application</NewBtn>
         </SummaryRow>
 
         {/* B) Final choice banner */}
         {finalApp && (
-          <BannerGreen>
+          <BannerGreen className="uni-banner">
             <BannerDot />
-            <BannerText><strong>Final choice locked — {finalApp.university}</strong>. The student sees this as their confirmed university.</BannerText>
+            <BannerText className="uni-banner-text"><strong>Final choice locked — {finalApp.university}</strong>. The student sees this as their confirmed university.</BannerText>
           </BannerGreen>
         )}
 
@@ -178,10 +253,10 @@ export default function UniversitiesTab({ loading = false, error = null, onReloa
         {loading && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {[1,2].map(i => (
-              <div key={i} style={{ background: "#fff", border: "1px solid #DDE2D9", borderRadius: 16, padding: 18, boxShadow: "0 2px 8px rgba(20,40,30,.03)" }}>
-                <SkeletonDot style={{ width: 140, height: 16, marginBottom: 8 }} />
-                <SkeletonDot style={{ width: 220, height: 12, marginBottom: 6 }} />
-                <SkeletonDot style={{ width: 180, height: 12 }} />
+              <div key={i} className="uni-skel-card" style={{ background: "#fff", border: "1px solid #DDE2D9", borderRadius: 16, padding: 18, boxShadow: "0 2px 8px rgba(20,40,30,.03)" }}>
+                <SkeletonDot className="uni-skel" style={{ width: 140, height: 16, marginBottom: 8 }} />
+                <SkeletonDot className="uni-skel" style={{ width: 220, height: 12, marginBottom: 6 }} />
+                <SkeletonDot className="uni-skel" style={{ width: 180, height: 12 }} />
               </div>
             ))}
           </div>
@@ -189,7 +264,7 @@ export default function UniversitiesTab({ loading = false, error = null, onReloa
 
         {/* Error */}
         {!loading && error && (
-          <EmptyState>
+          <EmptyState className="uni-empty">
             <div style={{ color: "#C62828", fontWeight: 700 }}>{error}</div>
             <RetryBtn onClick={onReload}>Retry</RetryBtn>
           </EmptyState>
@@ -203,57 +278,57 @@ export default function UniversitiesTab({ loading = false, error = null, onReloa
               const key = String(a.id || (a.university + a.specialty));
               const isFinal = a.isFinalChoice;
               return (
-                <Card key={key} as={isFinal ? CardFinal : Card}>
+                <Card key={key} as={isFinal ? CardFinal : Card} className={"uni-card" + (isFinal ? " uni-final" : "")}>
                   <CardHead>
                     <CardTitleRow>
-                      <UniName>{a.university}</UniName>
-                      {isFinal && <span style={{ fontSize: 11, fontWeight: 700, color: "#0B7A3E", background: "#E3EFE6", padding: ".15rem .45rem", borderRadius: 999 }}>Final choice</span>}
-                      <StatusPill style={{ background: s.bg, color: s.text }}>{a.status === "APPLIED" ? "Applied" : a.status === "ACCEPTED" ? "Accepted" : a.status === "REJECTED" ? "Rejected" : a.status === "AWAITING_PAYMENT" ? "Awaiting payment" : a.status}</StatusPill>
+                      <UniName className="uni-name">{a.university}</UniName>
+                      {isFinal && <span className="uni-final-tag" style={{ fontSize: 11, fontWeight: 700, color: "#0B7A3E", background: "#E3EFE6", padding: ".15rem .45rem", borderRadius: 999 }}>Final choice</span>}
+                      <StatusPill className={"st-" + a.status} style={{ background: s.bg, color: s.text }}>{a.status === "APPLIED" ? "Applied" : a.status === "ACCEPTED" ? "Accepted" : a.status === "REJECTED" ? "Rejected" : a.status === "AWAITING_PAYMENT" ? "Awaiting payment" : a.status}</StatusPill>
                     </CardTitleRow>
                     <KebabWrap ref={key === String(openMenuKey) ? menuRef : undefined}>
-                      <KebabBtn onClick={() => setOpenMenuKey(openMenuKey === key ? null : key)} aria-label="Menu"><FiMoreVertical size={16}/></KebabBtn>
+                      <KebabBtn className="uni-kebab" onClick={() => setOpenMenuKey(openMenuKey === key ? null : key)} aria-label="Menu"><FiMoreVertical size={16}/></KebabBtn>
                       {openMenuKey === key && (
-                        <Menu>
-                          <MenuItem onClick={() => { setOpenMenuKey(null); if (onSetFinalChoice) onSetFinalChoice(a.id); else if (a.isFinalChoice && onUpdate) onUpdate(a.id, { isFinalChoice: false }); }}>{a.isFinalChoice ? "Unlock final choice" : "Mark as final choice"}</MenuItem>
-                          <MenuItem onClick={() => { setOpenMenuKey(null); openEdit(a); }}>Edit</MenuItem>
-                          <MenuItem onClick={() => { setOpenMenuKey(null); if (onUpdate && a.status === "APPLIED") onUpdate(a.id, { status: "REJECTED" }); }}>{a.status === "APPLIED" ? "Change status to Rejected" : "Change status"}</MenuItem>
-                          <MenuItem onClick={() => { setOpenMenuKey(null); if (onDelete) onDelete(a.id); }}>{"Delete"}</MenuItem>
+                        <Menu className="uni-menu">
+                          <MenuItem className="uni-menu-item" onClick={() => { setOpenMenuKey(null); if (onSetFinalChoice) onSetFinalChoice(a.id); else if (a.isFinalChoice && onUpdate) onUpdate(a.id, { isFinalChoice: false }); }}>{a.isFinalChoice ? "Unlock final choice" : "Mark as final choice"}</MenuItem>
+                          <MenuItem className="uni-menu-item" onClick={() => { setOpenMenuKey(null); openEdit(a); }}>Edit</MenuItem>
+                          <MenuItem className="uni-menu-item" onClick={() => { setOpenMenuKey(null); if (onUpdate && a.status === "APPLIED") onUpdate(a.id, { status: "REJECTED" }); }}>{a.status === "APPLIED" ? "Change status to Rejected" : "Change status"}</MenuItem>
+                          <MenuItem className="uni-menu-item" onClick={() => { setOpenMenuKey(null); if (onDelete) onDelete(a.id); }}>{"Delete"}</MenuItem>
                         </Menu>
                       )}
                     </KebabWrap>
                   </CardHead>
 
-                  <MetaRow>
-                    <span><strong>{a.city}</strong></span><DividerDot />
-                    <span>{a.specialty}</span><DividerDot />
-                    <span>{a.level}</span><DividerDot />
-                    <span style={{ background: "#F0F1F0", padding: ".1rem .35rem", borderRadius: 999, fontWeight: 600, fontSize: 11 }}>{a.language || "ENG"}</span>
+                  <MetaRow className="uni-meta">
+                    <span><strong>{a.city}</strong></span><DividerDot className="uni-dot" />
+                    <span>{a.specialty}</span><DividerDot className="uni-dot" />
+                    <span>{a.level}</span><DividerDot className="uni-dot" />
+                    <span className="uni-lang" style={{ background: "#F0F1F0", padding: ".1rem .35rem", borderRadius: 999, fontWeight: 600, fontSize: 11 }}>{a.language || "ENG"}</span>
                   </MetaRow>
 
-                  <DateLine>
+                  <DateLine className="uni-date">
                     {a.appliedAt ? `Applied ${format(a.appliedAt, "d MMM yyyy")}` : "—"}
                     {a.decidedAt ? ` · Decision ${format(a.decidedAt, "d MMM yyyy")}` : "· awaiting the university"}
                   </DateLine>
 
                   {isFinal && (
-                    <DocStrip>
+                    <DocStrip className="uni-docstrip">
                       <DocRow>
                         <div>
-                          <div style={{ fontWeight: 700, fontSize: 13, color: C.text }}>Pre-enrolment letter</div>
-                          <div style={{ fontSize: 11, color: C.muted }}>Visible to the student in their portal</div>
+                          <div className="uni-doc-title" style={{ fontWeight: 700, fontSize: 13, color: C.text }}>Pre-enrolment letter</div>
+                          <div className="uni-doc-sub" style={{ fontSize: 11, color: C.muted }}>Visible to the student in their portal</div>
                         </div>
-                        <Badge>PDF</Badge>
+                        <Badge className="uni-badge">PDF</Badge>
                       </DocRow>
                       <DocRow style={{ marginTop: 8 }}>
                         <div style={{ display: "flex", gap: 6 }}>
                           {a.offerDocumentId ? (
                             <>
                               <PrimarySmall onClick={() => onViewDocument ? onViewDocument(a.offerDocumentId) : alert("View document " + a.offerDocumentId)}><FiFileText size={12}/> View document</PrimarySmall>
-                              <ActionBtn onClick={() => onUploadOfferLetter ? onUploadOfferLetter(a.id) : alert("Replace offer letter for " + a.university)}><FiUpload size={12}/> Replace</ActionBtn>
+                              <ActionBtn className="uni-action" onClick={() => onUploadOfferLetter ? onUploadOfferLetter(a.id) : alert("Replace offer letter for " + a.university)}><FiUpload size={12}/> Replace</ActionBtn>
                             </>
                           ) : (
                             <>
-                              <div style={{ fontSize: 12, color: C.muted }}>No pre-enrolment letter yet</div>
+                              <div className="uni-doc-sub" style={{ fontSize: 12, color: C.muted }}>No pre-enrolment letter yet</div>
                               <PrimarySmall onClick={() => alert("Upload letter for " + a.university)}><FiUpload size={12}/> Upload letter</PrimarySmall>
                             </>
                           )}
@@ -264,8 +339,8 @@ export default function UniversitiesTab({ loading = false, error = null, onReloa
 
                   {!isFinal && a.status === "APPLIED" && (
                     <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <ActionBtn style={{ background: "#0B7A3E", color: "#fff", borderColor: "#0B7A3E" }} onClick={() => { if (onUpdate) onUpdate(a.id, { status: "ACCEPTED" }); }}>Accepted</ActionBtn>
-                      <ActionBtn style={{ color: "#C62828", borderColor: "#FCEAEA", background: "#FCEAEA" }} onClick={() => { if (onUpdate) onUpdate(a.id, { status: "REJECTED" }); }}>Rejected</ActionBtn>
+                      <ActionBtn className="uni-action uni-accept" style={{ background: "#0B7A3E", color: "#fff", borderColor: "#0B7A3E" }} onClick={() => { if (onUpdate) onUpdate(a.id, { status: "ACCEPTED" }); }}>Accepted</ActionBtn>
+                      <ActionBtn className="uni-action uni-reject" style={{ color: "#C62828", borderColor: "#FCEAEA", background: "#FCEAEA" }} onClick={() => { if (onUpdate) onUpdate(a.id, { status: "REJECTED" }); }}>Rejected</ActionBtn>
                     </div>
                   )}
                 </Card>
@@ -276,52 +351,52 @@ export default function UniversitiesTab({ loading = false, error = null, onReloa
 
         {/* Empty state */}
         {!loading && !error && apps.length === 0 && (
-          <EmptyState>
-            <div style={{ fontSize: 22, fontWeight: 800, color: C.text, marginBottom: 4 }}>No applications yet</div>
-            <div style={{ fontSize: 14, color: C.muted, marginBottom: 10 }}>Start tracking university applications.</div>
+          <EmptyState className="uni-empty">
+            <div className="uni-empty-title" style={{ fontSize: 22, fontWeight: 800, color: C.text, marginBottom: 4 }}>No applications yet</div>
+            <div className="uni-empty-sub" style={{ fontSize: 14, color: C.muted, marginBottom: 10 }}>Start tracking university applications.</div>
             <NewBtn onClick={openNew}><FiPlus size={16}/> New application</NewBtn>
           </EmptyState>
         )}
 
         {/* Modal */}
         {modalOpen && (
-          <Overlay onClick={(e) => { if (e.target === e.currentTarget) setModalOpen(false); }}>
-            <ModalCard>
-              <ModalTitle>New application</ModalTitle>
+          <Overlay className="uni-overlay" onClick={(e) => { if (e.target === e.currentTarget) setModalOpen(false); }}>
+            <ModalCard className="uni-modal">
+              <ModalTitle className="uni-modal-title">New application</ModalTitle>
               <Field>
-                <Label>University</Label>
-                <Input value={form.university} onChange={e => setForm({ ...form, university: e.target.value })} placeholder="University name" />
+                <Label className="uni-label">University</Label>
+                <Input className="uni-input" value={form.university} onChange={e => setForm({ ...form, university: e.target.value })} placeholder="University name" />
               </Field>
               <Field>
-                <Label>City</Label>
-                <Input value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} placeholder="City" />
+                <Label className="uni-label">City</Label>
+                <Input className="uni-input" value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} placeholder="City" />
               </Field>
               <Field>
-                <Label>Program / Specialty</Label>
-                <Input value={form.specialty} onChange={e => setForm({ ...form, specialty: e.target.value })} placeholder="Specialty" />
+                <Label className="uni-label">Program / Specialty</Label>
+                <Input className="uni-input" value={form.specialty} onChange={e => setForm({ ...form, specialty: e.target.value })} placeholder="Specialty" />
               </Field>
               <Field>
-                <Label>Level</Label>
-                <Select value={form.level} onChange={e => setForm({ ...form, level: e.target.value })}>
+                <Label className="uni-label">Level</Label>
+                <Select className="uni-input" value={form.level} onChange={e => setForm({ ...form, level: e.target.value })}>
                   <option>Bachelor</option><option>Master</option><option>PhD</option>
                 </Select>
               </Field>
               <Field>
-                <Label>Language</Label>
-                <Select value={form.language} onChange={e => setForm({ ...form, language: e.target.value })}>
+                <Label className="uni-label">Language</Label>
+                <Select className="uni-input" value={form.language} onChange={e => setForm({ ...form, language: e.target.value })}>
                   <option>ENG</option><option>ITA</option><option>FRA</option><option>Other</option>
                 </Select>
               </Field>
               <Field>
-                <Label>Status</Label>
-                <Select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
+                <Label className="uni-label">Status</Label>
+                <Select className="uni-input" value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
                   <option>APPLIED</option><option>ACCEPTED</option><option>REJECTED</option><option>AWAITING_PAYMENT</option>
                 </Select>
               </Field>
-              {saveError && <ErrorText>{saveError}</ErrorText>}
+              {saveError && <ErrorText className="uni-error">{saveError}</ErrorText>}
               <ModalActions>
-                <ModalBtn onClick={() => setModalOpen(false)} disabled={saving}>Cancel</ModalBtn>
-                <ModalBtnPrimary onClick={saveApp} disabled={saving || !form.university || !form.specialty || !form.level}>{saving ? "Saving…" : "Create"}</ModalBtnPrimary>
+                <ModalBtn className="uni-modal-btn" onClick={() => setModalOpen(false)} disabled={saving}>Cancel</ModalBtn>
+                <ModalBtnPrimary className="uni-modal-btn uni-primary" onClick={saveApp} disabled={saving || !form.university || !form.specialty || !form.level}>{saving ? "Saving…" : "Create"}</ModalBtnPrimary>
               </ModalActions>
             </ModalCard>
           </Overlay>

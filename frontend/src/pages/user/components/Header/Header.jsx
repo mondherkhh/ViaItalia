@@ -17,7 +17,7 @@ import {
   ThemeToggle
 } from './Header.styles';
 
-const Header = ({ onLogout, activeMenu, menuItems = [], onMenuClick }) => {
+const Header = ({ onLogout, activeMenu, menuItems = [], onMenuClick, mobileMenuButton = null }) => {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { language } = useLanguage();
@@ -81,6 +81,7 @@ const Header = ({ onLogout, activeMenu, menuItems = [], onMenuClick }) => {
   return (
     <HeaderCard ref={headerRef}>
       <HeaderLeft>
+        {mobileMenuButton}
         <HeaderText>
           <HeaderTitle>{getTitle()}</HeaderTitle>
           <HeaderSubtitle>

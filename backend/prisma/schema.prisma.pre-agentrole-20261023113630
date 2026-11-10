@@ -1,0 +1,309 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "windows", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  relationMode = "prisma"
+  url = env("DATABASE_URL")
+}
+
+model AgentOffice {
+  id Int @id @default(autoincrement())
+  name String @unique @db.VarChar(255)
+  city String? @db.VarChar(255)
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+  @@map("agentoffice")
+}
+
+model AgencySetting {
+  id           Int      @id @default(autoincrement())
+  settingKey   String   @unique @db.VarChar(100)
+  settingValue String   @db.VarChar(255)
+  updatedAt    DateTime @updatedAt
+
+  @@map("agencysetting")
+}
+
+model StudentTask {
+  id Int @id @default(autoincrement())
+  userId Int
+  dossierId Int?
+  type String @default("GENERAL")
+  title String
+  description String? @db.Text
+  amount Float?
+  currency String? @default("TND")
+  folder String?
+  status String @default("OPEN")
+  assignedAt DateTime @default(now())
+  completedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User? @relation(fields: [userId], references: [id])
+  @@map("studenttask")
+  @@index([userId])
+}
+
+model StudentInvite {
+  id         Int      @id @default(autoincrement())
+  token      String   @unique @db.VarChar(64)
+  email      String?  @db.VarChar(255)
+  usedAt     DateTime?
+  userId     Int?
+  expiresAt  DateTime
+  createdById Int?
+  createdAt  DateTime @default(now())
+
+  @@map("studentinvite")
+}
+
+model CalendarEvent {
+  id             Int       @id @default(autoincrement())
+  title          String
+  notes          String?   @db.Text
+  kind           String    @default("EVENT") // EVENT | DEADLINE
+  allDay         Boolean   @default(false)
+  startsAt       DateTime
+  endsAt         DateTime?
+  location       String?
+  studentId      Int?
+  ownerId        Int?
+  remindMinutes Int?
+  repeatRule     String?   // DAILY | WEEKLY | MONTHLY
+  done           Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("calendarevent")
+  @@index([studentId])
+  @@index([ownerId])
+  @@index([startsAt])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id Int @id @default(autoincrement())
+  firstName String
+  lastName String
+  email String @unique
+  password String
+  passport String?
+  address String?
+  phoneNumber String?
+  image String?
+  role Role @default(USER)
+  isApproved Boolean @default(false)
+  officeId Int?
+  isAgent Boolean @default(false)
+  allowedSections String? @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  dossiers Dossier[]
+  payments Payment[]
+  receipts Receipt[]
+  reviews Review[]
+  contracts Contract[]
+  appointments Appointment[]
+  messages Message[]
+  notifications Notification[]
+  universityInfo UniversityInfo[]
+  userAnnouncements UserAnnouncement[]
+  timeSlots TimeSlot[]
+  studentTasks StudentTask[]
+}
+
+model Appointment {
+  user User? @relation(fields: [userId], references: [id])
+  id Int @id @default(autoincrement())
+  type String
+  date DateTime
+  time String?
+  userId Int?
+  status String @default("PENDING")
+  etat String @default("PRESENTIEL")
+  slotId Int?   // NEW: reference to TimeSlot
+  createdAt DateTime @default(now())
+}
+
+model Dossier {
+  user User? @relation(fields: [userId], references: [id])
+  id Int @id @default(autoincrement())
+  title String
+  userId Int?
+  status String @default("PENDING")
+  traductionStatus String @default("EN_COURS")
+  officeId Int?
+  inscriptionStatus String @default("EN_COURS")
+  visaStatus String @default("EN_COURS")
+  agreedFee Float?   // NEW
+  createdAt DateTime @default(now())
+}
+
+model StudyForm {
+  id Int @id @default(autoincrement())
+  firstName String
+  lastName String
+  email String @unique
+  country String?
+  program String?
+  status String @default("EN_COURS")
+  createdAt DateTime @default(now())
+}
+
+model Announcement {
+  id Int @id @default(autoincrement())
+  title String
+  content String @db.Text
+  type String @default("INFO")
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Contract {
+  user User? @relation(fields: [userId], references: [id])
+  id Int @id @default(autoincrement())
+  filePath String?
+  status String @default("PENDING")
+  userId Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  user User? @relation(fields: [userId], references: [id])
+  id Int @id @default(autoincrement())
+  rating Int
+  content String
+  status String @default("PENDING")
+  adminNote String?
+  userId Int?
+  reviewedAt DateTime?   // DB allows NULL
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Payment {
+  user User? @relation(fields: [userId], references: [id])
+  id Int @id @default(autoincrement())
+  amount Float
+  status String @default("PENDING")
+  userId Int?
+  prixTotal Float   // NEW
+  prixPaye Float    // NEW
+  prixReste Float   // NEW
+  method String       // NEW
+  loggedBy String     // NEW
+  paidAt DateTime     // NEW
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Receipt {
+  user User? @relation(fields: [userId], references: [id])
+  id Int @id @default(autoincrement())
+  receiptNumber String
+  paymentDate DateTime
+  amount Float
+  paymentMethod String
+  userId Int?
+  createdAt DateTime @default(now())
+}
+
+model Message {
+  user User? @relation(fields: [userId], references: [id])
+  id Int @id @default(autoincrement())
+  content String @db.Text
+  fileName String?
+  filePath String?
+  fileSize Int?
+  fileType String?
+  sender String
+  userId Int?
+  readAt DateTime?   // DB allows NULL
+  createdAt DateTime @default(now())
+}
+
+model UniversityInfo {
+  id Int @id @default(autoincrement())
+  university String?
+  specialty String?
+  level String?
+  userId Int?
+  status String?          // NEW
+  city String?          // NEW
+  language String?      // NEW
+  appliedAt DateTime?   // NEW
+  decidedAt DateTime?   // NEW
+  isFinalChoice Boolean? // NEW
+  offerDocumentId Int? // DB int (NULL DEFAULT NULL)
+  createdAt DateTime @default(now())
+  user User? @relation(fields: [userId], references: [id])
+  @@map("universityinfo")
+  @@index([userId])
+}
+
+model UserAnnouncement {
+  id Int @id @default(autoincrement())
+  announcementId Int
+  userId Int
+  isRead Boolean @default(false)
+  createdAt DateTime @default(now())
+  user User? @relation(fields: [userId], references: [id])
+  @@map("userannouncement")
+  @@index([userId])
+}
+
+model Notification {
+  id Int @id @default(autoincrement())
+  content String
+  isRead Boolean @default(false)
+  userId Int
+  createdAt DateTime @default(now())
+  user User? @relation(fields: [userId], references: [id])
+  @@map("notification")
+  @@index([userId])
+}
+
+model TimeSlot {
+  id Int @id @default(autoincrement())
+  date DateTime
+  userId Int?
+  startTime String   // NEW
+  endTime String       // NEW
+  maxBookings Int      // NEW
+  currentBookings Int  // NEW
+  isAvailable Boolean  // NEW
+  createdAt DateTime @default(now())
+  user User? @relation(fields: [userId], references: [id])
+  @@map("timeslot")
+  @@index([userId])
+  @@index([date])
+}
+
+model Document {
+  id Int @id @default(autoincrement())
+  dossierId Int?
+  filePath String?
+  fileName String?
+  category String?
+  name String?
+  size Int?
+  mimeType String?
+  uploaderId Int?
+  uploaderRole String?
+  status String?
+  isTranslation Boolean?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@map("document")
+  @@index([dossierId])
+  @@index([uploaderId])
+}

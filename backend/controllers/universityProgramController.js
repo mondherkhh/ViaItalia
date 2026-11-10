@@ -1,9 +1,20 @@
 const axios = require('axios');
 const prisma = require('../config/prisma');
 const { getDirectSource } = require('../services/admissionSourceMap');
+const { enrichProgram } = require('../services/officialAdmissionsEnricher');
+const {
+  fetchAllInstitutions,
+  groupByRegion,
+  findInstitutionSeeds
+} = require('../services/universitalyInstitutionDiscovery');
+const {
+  fetchAllCourses: fetchAllCoursesFromUniversitaly,
+  groupCoursesByInstitution
+} = require('../services/universitalyCourseDiscovery');
 
 const UNIVERSITALY_API = process.env.UNIVERSITALY_API_URL || 'https://universitaly-backend.cineca.it';
 const DEFAULT_MAX_PAGES = Number(process.env.UNIVERSITY_SYNC_MAX_PAGES || 600);
+
 const PAGE_CONCURRENCY = Number(process.env.UNIVERSITY_SYNC_CONCURRENCY || 5);
 const REQUEST_TIMEOUT = Number(process.env.UNIVERSITY_SYNC_TIMEOUT_MS || 20000);
 const ENRICH_OFFICIAL_PAGES = String(process.env.UNIVERSITY_ENRICH_OFFICIAL_PAGES || 'false').toLowerCase() === 'true';
@@ -193,6 +204,182 @@ async function syncPrograms(req, res) {
   }
 }
 
+async function listInstitutions(req, res) {
+  try {
+    const catalogue = await fetchAllInstitutions();
+    const records = findInstitutionSeeds(catalogue.records, {
+      type: req.query.type || undefined,
+      regionCode: req.query.regionCode || undefined,
+      search: req.query.search || undefined
+    });
+    return res.json({
+      success: true,
+      data: records,
+      regions: groupByRegion(records),
+      meta: {
+        ...catalogue.totals,
+        filtered: records.length,
+        source: catalogue.source,
+        fetchedAt: catalogue.fetchedAt
+      }
+    });
+  } catch (error) {
+    console.error('Universitaly institutions discovery:', error.response?.data || error.message || error);
+    return res.status(502).json({
+      success: false,
+      message: 'تعذر تحميل قائمة المؤسسات من Universitaly.'
+    });
+  }
+}
+
+async function discoverCatalogue(req, res) {
+  try {
+    const filters = { ...(req.query || {}), ...(req.body || {}) };
+    const maxPages = Math.min(DEFAULT_MAX_PAGES, Math.max(1, Number(filters.maxPages || DEFAULT_MAX_PAGES)));
+    const [institutions, courses] = await Promise.all([
+      fetchAllInstitutions(),
+      fetchAllCoursesFromUniversitaly(filters, maxPages)
+    ]);
+    return res.json({
+      success: true,
+      data: {
+        institutions: institutions.records,
+        courses: courses.records
+      },
+      groups: groupCoursesByInstitution(courses.records),
+      meta: {
+        institutions: institutions.totals,
+        courses: {
+          fetched: courses.records.length,
+          totalResults: courses.totalResults,
+          totalPages: courses.totalPages,
+          pagesFetched: courses.pagesFetched,
+          institutions: courses.institutions
+        },
+        note: 'Catalogue candidates only; no database write was performed.',
+        fetchedAt: courses.fetchedAt
+      }
+    });
+  } catch (error) {
+    console.error('Universitaly catalogue discovery:', error.response?.data || error.message || error);
+    return res.status(502).json({
+      success: false,
+      message: 'تعذر اكتشاف catalogue Universitaly.'
+    });
+  }
+}
+
+async function enrichCatalogue(req, res) {
+  try {
+    const body = req.body || {};
+    const query = req.query || {};
+    const limit = Math.min(100, Math.max(1, Number(body.limit || query.limit || 20)));
+    const maxPages = Math.min(DEFAULT_MAX_PAGES, Math.max(1, Number(body.maxPages || query.maxPages || 1)));
+    const [institutions, courses] = await Promise.all([
+      fetchAllInstitutions(),
+      fetchAllCourses({ ...query, ...body }, maxPages)
+    ]);
+    const institutionById = new Map(institutions.records.map(item => [String(item.externalId), item]));
+    const candidates = [];
+
+    for (const course of courses.records.slice(0, limit)) {
+      const institution = institutionById.get(String(course.institutionId));
+      const institutionUrl = institution?.officialUrl || null;
+      const directCourseUrl = course.sourceUrl && !String(course.sourceUrl).includes('/cerca-corsi?')
+        ? course.sourceUrl
+        : null;
+      const programUrl = directCourseUrl || institutionUrl;
+      if (!programUrl) {
+        candidates.push({
+          ...course,
+          verificationStatus: 'NEEDS_REVIEW',
+          enrichment: { skipped: true, reason: 'direct programme URL unavailable' }
+        });
+        continue;
+      }
+
+      let officialHost;
+      try {
+        officialHost = new URL(programUrl).hostname;
+      } catch (_) {
+        officialHost = null;
+      }
+      if (!officialHost) {
+        candidates.push({ ...course, verificationStatus: 'NEEDS_REVIEW', enrichment: { skipped: true, reason: 'invalid programme URL' } });
+        continue;
+      }
+
+      const enrichment = await enrichProgram({
+        programName: course.programName,
+        universityName: course.university,
+        programUrl,
+        source: {
+          domains: [officialHost],
+          admissionsUrls: [programUrl],
+          feesUrls: [programUrl],
+          sourceMap: directCourseUrl ? 'universitaly-direct-course' : 'institution-fallback'
+        }
+      }).catch(error => ({ error: error.message }));
+
+      candidates.push({
+        ...course,
+        officialUrl: programUrl,
+        openingDate: enrichment?.openingDate || course.openingDate || null,
+        closingDate: enrichment?.closingDate || course.closingDate || null,
+        applicationFee: enrichment?.applicationFee || course.applicationFee || null,
+        tuition: enrichment?.tuition || course.tuition || null,
+        enrichment,
+        verificationStatus: enrichment?.verificationStatus || 'NEEDS_REVIEW'
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: candidates,
+      meta: {
+        requested: limit,
+        enriched: candidates.length,
+        pagesFetched: courses.pagesFetched,
+        note: 'Enriched candidates only; no database write was performed.'
+      }
+    });
+  } catch (error) {
+    console.error('Universitaly catalogue enrichment:', error.response?.data || error.message || error);
+    return res.status(502).json({ success: false, message: 'تعذر استخراج dates وfrais من المصادر الرسمية.' });
+  }
+}
+
+async function importCatalogue(req, res) {
+  try {
+    const approved = Array.isArray(req.body?.approved) ? req.body.approved : [];
+    if (!approved.length) return res.status(400).json({ success: false, message: 'approved candidates are required.' });
+    if (approved.length > 100) return res.status(400).json({ success: false, message: 'Maximum 100 candidates per import.' });
+
+    const results = [];
+    for (const candidate of approved) {
+      const data = normaliseCourse(candidate);
+      if (!data.university || !data.programName || !data.field || !data.sourceUrl) {
+        results.push({ status: 'SKIPPED', programName: data.programName || null, reason: 'missing required fields' });
+        continue;
+      }
+
+      const existing = await prisma.universityProgram.findFirst({
+        where: { university: data.university, programName: data.programName, sourceUrl: data.sourceUrl },
+        select: { id: true }
+      });
+      const record = existing
+        ? await prisma.universityProgram.update({ where: { id: existing.id }, data })
+        : await prisma.universityProgram.create({ data });
+      results.push({ status: existing ? 'UPDATED' : 'CREATED', id: record.id, university: record.university, programName: record.programName });
+    }
+
+    return res.json({ success: true, imported: results.filter(item => item.status !== 'SKIPPED').length, results });
+  } catch (error) {
+    console.error('Universitaly catalogue import:', error);
+    return res.status(500).json({ success: false, message: 'تعذر إدخال candidates المعتمدة.' });
+  }
+}
+
 async function createProgram(req, res) {
   try {
     const data = normaliseCourse(req.body);
@@ -205,4 +392,12 @@ async function createProgram(req, res) {
   }
 }
 
-module.exports = { listPrograms, syncPrograms, createProgram };
+module.exports = {
+  listPrograms,
+  syncPrograms,
+  createProgram,
+  listInstitutions,
+  discoverCatalogue,
+  enrichCatalogue,
+  importCatalogue,
+};

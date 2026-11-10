@@ -27,13 +27,30 @@ const Hero = styled.div`
   &:before { content: ""; position: absolute; top: -15%; right: -10%; width: 320px; height: 320px; border-radius: 50%; background: rgba(255,255,255,.08); filter: blur(40px); pointer-events: none; }
   &:after { content: ""; position: absolute; bottom: -30%; left: -5%; width: 260px; height: 260px; border-radius: 50%; background: rgba(255,255,255,.06); filter: blur(30px); pointer-events: none; }
 `;
-const HeroLeft = styled.div` position: relative; z-index: 1; display: flex; align-items: center; gap: 1rem; `;
+const HeroLeft = styled.div`
+  position: relative; z-index: 1; display: flex; align-items: center; gap: 1rem; min-width: 0;
+  @media (max-width: 640px) {
+    align-items: flex-start;
+  }
+`;
 const IconSquare = styled.div` width: 56px; height: 56px; border-radius: 14px; background: rgba(255,255,255,.12); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,.15); `;
 const HeroTitle = styled.h2` font-size: 1.6rem; font-weight: 900; margin: 0; letter-spacing: -.03em; `;
 const HeroSub = styled.p` font-size: .92rem; opacity: .8; margin: .35rem 0 0 0; `;
+const HeroActions = styled.div`
+  position: relative; z-index: 1; margin-left: auto; display: flex; align-items: center; gap: .75rem;
+  @media (max-width: 640px) {
+    width: 100%; margin-left: 0; justify-content: space-between;
+  }
+`;
 
 /* ─── 4 KPI cards ─── */
-const StatsRow = styled.div` display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; `;
+const StatsRow = styled.div`
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr;
+    gap: .75rem;
+  }
+`;
 const StatCard = styled.div`
   background: ${G.card}; border: 1px solid ${G.border}; border-radius: 20px; padding: 1.1rem 1.2rem;
   box-shadow: 0 4px 18px rgba(20,30,20,.06); display: flex; flex-direction: column; gap: .35rem;
@@ -50,7 +67,10 @@ const StatCaption = styled.div` font-size: .78rem; color: ${G.muted}; `;
 /* ─── Forgotten card ─── */
 const Forgot = styled.div`
   background: var(--adm-chip-red-bg); border: 1px solid var(--adm-chip-red-text); border-radius: 20px; padding: 1.1rem 1.25rem; margin-bottom: 1.25rem;
-  display: flex; gap: .9rem; align-items: flex-start;
+  display: flex; gap: .9rem; align-items: flex-start; min-width: 0;
+  @media (max-width: 640px) {
+    padding: .9rem; gap: .65rem;
+  }
 `;
 const ForgotIcon = styled.div` width: 40px; height: 40px; border-radius: 10px; background: var(--adm-chip-red-bg); color: ${G.red}; display: flex; align-items: center; justify-content: center; flex-shrink: 0; `;
 
@@ -58,16 +78,42 @@ const ForgotIcon = styled.div` width: 40px; height: 40px; border-radius: 10px; b
 const SectionTitle = styled.h3` font-size: .7rem; text-transform: uppercase; letter-spacing: .15em; color: ${G.muted}; font-weight: 800; margin: 0 0 .6rem 0; `;
 
 /* ─── Work queue card (left) ─── */
-const TwoCol = styled.div` display: grid; grid-template-columns: 58% 1fr; gap: 1rem; `;
-const Card = styled.div` background: ${G.card}; border: 1px solid ${G.border}; border-radius: 20px; padding: 1.1rem; box-shadow: 0 4px 18px rgba(20,30,20,.06); `;
+const TwoCol = styled.div`
+  display: grid; grid-template-columns: 58% 1fr; gap: 1rem; min-width: 0;
+  @media (max-width: 800px) {
+    grid-template-columns: 1fr;
+    gap: .75rem;
+  }
+`;
+const Card = styled.div`
+  background: ${G.card}; border: 1px solid ${G.border}; border-radius: 20px; padding: 1.1rem; box-shadow: 0 4px 18px rgba(20,30,20,.06); min-width: 0;
+  @media (max-width: 640px) {
+    padding: .9rem;
+  }
+`;
 const TabRow = styled.div` display: flex; gap: .35rem; flex-wrap: wrap; margin-bottom: .75rem; `;
 const TabBtn = styled.button`
   padding: .35rem .7rem; border-radius: 999px; border: 1px solid ${p => p.$a ? "var(--adm-accent)" : G.border};
   background: ${p => p.$a ? "var(--adm-surface-solid)" : G.card}; color: ${p => p.$a ? G.green : G.muted}; font-size: .72rem; font-weight: 600; cursor: pointer;
 `;
 const WTable = styled.div` width: 100%; `;
-const WHead = styled.div` display: flex; gap: 1rem; padding: .3rem 0; font-size: .6rem; text-transform: uppercase; letter-spacing: .12em; color: ${G.muted}; font-weight: 700; border-bottom: 1px solid ${G.border}; `;
-const WRow = styled.div` display: flex; gap: 1rem; align-items: center; padding: .65rem 0; border-bottom: 1px solid ${G.border}; `;
+const WHead = styled.div`
+  display: flex; gap: 1rem; padding: .3rem 0; font-size: .6rem; text-transform: uppercase; letter-spacing: .12em; color: ${G.muted}; font-weight: 700; border-bottom: 1px solid ${G.border};
+  @media (max-width: 640px) {
+    display: grid; grid-template-columns: minmax(92px, 1.2fr) minmax(86px, 1fr) 38px 54px; gap: .4rem;
+  }
+`;
+const WRow = styled.div`
+  display: flex; gap: 1rem; align-items: center; padding: .65rem 0; border-bottom: 1px solid ${G.border};
+  @media (max-width: 640px) {
+    display: grid; grid-template-columns: minmax(92px, 1.2fr) minmax(86px, 1fr) 38px 54px; gap: .4rem; align-items: center;
+    & > span, & > a { width: auto !important; min-width: 0; }
+    & > span:nth-child(1) { gap: .35rem !important; }
+    & > span:nth-child(2) { font-size: .68rem !important; line-height: 1.15; }
+    & > span:nth-child(3) { font-size: .75rem !important; }
+    & > a { text-align: center; padding: .2rem .25rem !important; }
+  }
+`;
 const Avatar = styled.div` width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--adm-accent), #0B7A43); color: #fff; display: flex; align-items: center; justify-content: center; font-size: .65rem; font-weight: 800; flex-shrink: 0; `;
 
 /* ─── Pipeline card (right) ─── */
@@ -185,7 +231,7 @@ export default function DashboardHome({ users = [], dossiers = [], payments = []
             <HeroSub>Votre console d'administration centrale — suivi des admissions.</HeroSub>
           </div>
         </HeroLeft>
-        <div style={{ position: "relative", zIndex: 1, marginLeft: "auto", display: "flex", alignItems: "center", gap: ".75rem" }}>
+        <HeroActions>
           <span style={{ fontSize: ".75rem", opacity: .7, fontWeight: 600 }}>Intake</span>
           <button
             ref={btnRef}
@@ -196,7 +242,7 @@ export default function DashboardHome({ users = [], dossiers = [], payments = []
             onKeyDown={(e) => { if (e.key === 'Escape') setMenuOpen(false); if (e.key === 'Enter') setMenuOpen(true); }}
             style={{ background: "rgba(255,255,255,.12)", border: "1px solid rgba(255,255,255,.2)", borderRadius: 999, padding: ".35rem .9rem", color: "#fff", fontSize: ".82rem", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: ".35rem" }}
           >{selectedOfficeId ? `2026 intake · ${offices.find(o => o.id === selectedOfficeId)?.name || ''}` : '2026 intake'} <FiChevronDown size={14} /></button>
-        </div>
+        </HeroActions>
       </Hero>
 
       {/* Menu porté au body pour franchir overflow:hidden de la bannière */}
@@ -272,7 +318,7 @@ export default function DashboardHome({ users = [], dossiers = [], payments = []
       )}
 
       {/* Two columns */}
-      <div style={{ display: "grid", gridTemplateColumns: "58% 1fr", gap: "1rem" }}>
+      <TwoCol>
         {/* Left — Work queue */}
         <Card>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: ".5rem" }}>
@@ -329,7 +375,7 @@ export default function DashboardHome({ users = [], dossiers = [], payments = []
             </BarRow>
           ))}
         </Card>
-      </div>
+      </TwoCol>
 
       {/* Float chat */}
       <FloatBtn aria-label="Chat" title="Chat"><FiMessageSquare size={20} /><BadgeRed>2</BadgeRed></FloatBtn>

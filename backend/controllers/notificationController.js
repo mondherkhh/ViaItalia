@@ -1,19 +1,13 @@
 const prisma = require('../config/prisma');
+const notificationsService = require('../services/notifications');
 
 // Get all notifications for a user
 const getUserNotifications = async (req, res) => {
   try {
-    const { userId } = req.user;
-    
-    const notifications = await prisma.notification.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    res.json({
-      success: true,
-      data: notifications
-    });
+    const userId = req.user?.userId || req.user?.id;
+    const result = await notificationsService.listForUser(userId, 30);
+    if (!result.success) return res.status(500).json({ success: false, message: result.error });
+    res.json({ success: true, data: result.data });
   } catch (error) {
     console.error('Error fetching notifications:', error);
     res.status(500).json({
@@ -27,19 +21,10 @@ const getUserNotifications = async (req, res) => {
 // Get unread notifications count for a user
 const getUnreadCount = async (req, res) => {
   try {
-    const { userId } = req.user;
-    
-    const unreadCount = await prisma.notification.count({
-      where: { 
-        userId,
-        isRead: false 
-      }
-    });
-
-    res.json({
-      success: true,
-      data: unreadCount
-    });
+    const userId = req.user?.userId || req.user?.id;
+    const result = await notificationsService.unreadCount(userId);
+    if (!result.success) return res.status(500).json({ success: false, message: result.error });
+    res.json({ success: true, data: result.data });
   } catch (error) {
     console.error('Error fetching unread count:', error);
     res.status(500).json({
@@ -53,23 +38,11 @@ const getUnreadCount = async (req, res) => {
 // Mark notification as read
 const markAsRead = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { userId } = req.user;
-    
-    const notification = await prisma.notification.updateMany({
-      where: {
-        id: parseInt(id),
-        userId: userId
-      },
-      data: {
-        isRead: true
-      }
-    });
-
-    res.json({
-      success: true,
-      data: notification
-    });
+    const id = parseInt(req.params.id);
+    const userId = req.user?.userId || req.user?.id;
+    const result = await notificationsService.markRead(id, userId);
+    if (!result.success) return res.status(500).json({ success: false, message: result.error });
+    res.json({ success: true, data: result });
   } catch (error) {
     console.error('Error marking notification as read:', error);
     res.status(500).json({
@@ -83,22 +56,10 @@ const markAsRead = async (req, res) => {
 // Mark all notifications as read for a user
 const markAllAsRead = async (req, res) => {
   try {
-    const { userId } = req.user;
-    
-    const result = await prisma.notification.updateMany({
-      where: {
-        userId,
-        isRead: false
-      },
-      data: {
-        isRead: true
-      }
-    });
-
-    res.json({
-      success: true,
-      data: result
-    });
+    const userId = req.user?.userId || req.user?.id;
+    const result = await notificationsService.markAllRead(userId);
+    if (!result.success) return res.status(500).json({ success: false, message: result.error });
+    res.json({ success: true, data: result });
   } catch (error) {
     console.error('Error marking all notifications as read:', error);
     res.status(500).json({

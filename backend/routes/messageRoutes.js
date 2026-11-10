@@ -1,7 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const authMiddleware = require("../middlewares/authMiddleware");
-const { requireAdmin, requireSelfOrAdmin } = require("../middlewares/roleMiddleware");
+const { requireStaff, requireSelfOrAdmin } = require("../middlewares/roleMiddleware");
+const { requireSection } = require("../middlewares/requireRole");
 const multer = require("multer");
 const path = require("path");
 
@@ -64,7 +65,7 @@ router.post("/", upload.any(), (req, res, next) => {
 }, createMessage);
 
 // Get all messages (admin only)
-router.get("/", requireAdmin, getAllMessages);
+router.get("/", requireStaff, requireSection("messages"), getAllMessages);
 
 // Get message by ID
 router.get("/:id", getMessageById);
@@ -73,7 +74,7 @@ router.get("/:id", getMessageById);
 router.get("/user/:userId", requireSelfOrAdmin, getMessagesByUserId);
 
 // Get messages by sender (admin only)
-router.get("/sender/:sender", requireAdmin, getMessagesBySender);
+router.get("/sender/:sender", requireStaff, getMessagesBySender);
 
 // Update message
 router.put("/:id", updateMessage);

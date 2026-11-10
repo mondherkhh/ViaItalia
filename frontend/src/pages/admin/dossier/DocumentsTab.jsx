@@ -29,7 +29,6 @@ function InlineFolderIcon({ status }) {
   );
 }
 
-
 export default function DocumentsTab({ documents = [], docLoading = false, docError = null, searchQuery = "", setSearchQuery = () => {}, viewGrid = true, setViewGrid = () => {}, selectedFolder = null, setSelectedFolder = () => {}, dossierId = 1, folderCategories = ["Traduction", "Inscription", "Visa"], folderStatus = () => ({}), studentName = "", onOpenToStudent = () => {}, onReload = () => {}, onDeleteDoc = null }) {
   const [filterType, setFilterType] = useState("Any type");
   const [filterOwner, setFilterOwner] = useState("Anyone");
@@ -37,10 +36,10 @@ export default function DocumentsTab({ documents = [], docLoading = false, docEr
   const [filterSort, setFilterSort] = useState("Last modified");
   const [uploadFile, setUploadFile] = useState(null);
   const fileInputRef = React.useRef(null);
-  const [folderAccessState, setFolderAccessState] = useState({}); // { folderName: true/false }
+  const [folderAccessState, setFolderAccessState] = useState({});
   const [folderAccessErrMsg, setFolderAccessErrMsg] = useState("");
-  const [folderAccessUpdating, setFolderAccessUpdating] = useState(null); // folder name being updated
-  const [deleteDialog, setDeleteDialog] = useState(null); // { doc, deleting, error }
+  const [folderAccessUpdating, setFolderAccessUpdating] = useState(null);
+  const [deleteDialog, setDeleteDialog] = useState(null);
   const [openMenuKey, setOpenMenuKey] = useState(null);
   const [openFolderMenuKey, setOpenFolderMenuKey] = useState(null);
   const menuRef = useRef(null);
@@ -51,11 +50,11 @@ export default function DocumentsTab({ documents = [], docLoading = false, docEr
   const folderMapLegacy = {"Traduction":"Translations","Inscription":"Admissions","Visa":"Visa documents"};
   const folders = FOLDERS.map((cat) => {
     const docs = safeDocs.filter((d) => {
-    const c = (d.category || d.folder || "").toString();
-    const map = {"Traduction":"Translations","Inscription":"Admissions","Visa":"Visa documents"};
-    const mapped = map[c] || c;
-    return mapped.toLowerCase() === cat.toLowerCase() || c.toLowerCase() === cat.toLowerCase();
-  });
+      const c = (d.category || d.folder || "").toString();
+      const map = {"Traduction":"Translations","Inscription":"Admissions","Visa":"Visa documents"};
+      const mapped = map[c] || c;
+      return mapped.toLowerCase() === cat.toLowerCase() || c.toLowerCase() === cat.toLowerCase();
+    });
     const count = docs.length;
     const allVerified = docs.length > 0 && docs.every((d) => d.status === "VERIFIED" || d.status === "Verified");
     const req = REQUIRED_FILES[cat] || 2;
@@ -83,6 +82,7 @@ export default function DocumentsTab({ documents = [], docLoading = false, docEr
       document.removeEventListener("keydown", handleKey);
     };
   }, []);
+
   const filtered = useMemo(() => {
     let rows = safeDocs;
     if (selectedFolder) rows = rows.filter((d) => (d.category || "") === selectedFolder);
@@ -101,10 +101,8 @@ export default function DocumentsTab({ documents = [], docLoading = false, docEr
 
   const handleToggleFolderAccess = async (folderName) => {
     if (!folderName || folderAccessUpdating === folderName) return;
-    // Need actual student userId — try prop or fall back; don't modify student 1 silently
     const studentId = dossierId || 1;
     if (!studentId || studentId === 1) {
-      // If no real id available, don't call; show error in UI
       setFolderAccessErrMsg("Identifiant étudiant manquant (ne modifie pas le n°1)");
       return;
     }
@@ -155,6 +153,112 @@ export default function DocumentsTab({ documents = [], docLoading = false, docEr
       <style>{`
         .doc-root, .doc-root * { box-sizing: border-box; }
         .doc-root::before, .doc-root::after { content: none !important; display: none !important; }
+        .admin-mobile-folder-content { display: none; }
+
+        /* ---- Mode clair : les éléments à fond clair gardent un texte foncé ---- */
+        .doc-root .doc-light-btn,
+        .doc-root .doc-light-btn svg,
+        .doc-root input.doc-search-input,
+        .doc-root select.doc-select { color: #12231B !important; }
+        .doc-root .doc-light-btn,
+        .doc-root input.doc-search-input,
+        .doc-root select.doc-select { background: #fff !important; }
+        .doc-root .doc-folder-name { color: #12231B !important; }
+        .doc-root .admin-mobile-folder-upload,
+        .doc-root .admin-mobile-folder-upload svg { color: #fff !important; }
+        .doc-root .admin-mobile-folder-upload { background: #067D45 !important; }
+
+        @media (max-width: 700px) {
+          .folder-grid { grid-template-columns: 1fr !important; gap: 10px !important; margin-bottom: 18px !important; }
+          .admin-folder-card {
+            height: auto !important; min-height: 0 !important;
+            padding: 14px 16px !important; display: block !important;
+            text-align: left !important; border-radius: 18px !important;
+          }
+          .admin-folder-card > div:not(.admin-mobile-folder-content) { display: none !important; }
+          .admin-folder-card .admin-mobile-folder-content {
+            display: grid !important;
+            grid-template-columns: 12px 44px minmax(0, 1fr);
+            align-items: center; column-gap: 12px; width: 100%; padding: 0;
+          }
+          .admin-mobile-folder-chevron { color: #98A39D; font-size: 20px; line-height: 1; }
+          .admin-mobile-folder-icon { width: 44px; height: 38px; display: grid; place-items: center; }
+          .admin-mobile-folder-icon svg { width: 44px; height: 38px; }
+          .admin-mobile-folder-main { min-width: 0; }
+          .admin-mobile-folder-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+          .admin-mobile-folder-title { color: #12231B; font-size: 15px; font-weight: 700; }
+          .admin-mobile-folder-status { padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+          .admin-mobile-folder-subtitle { color: #7C877F; font-size: 13px; margin-top: 4px; }
+          .admin-mobile-folder-upload {
+            grid-column: 1 / -1; width: 100%; margin-top: 12px; border: 0; border-radius: 10px;
+            padding: 12px 8px; font-size: 14px; font-weight: 700;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;
+            box-shadow: 0 6px 14px rgba(6,125,69,.28);
+          }
+        }
+
+        /* ================= MODE SOMBRE ================= */
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root {
+          --d-card: #0F2A24;
+          --d-field: #12342C;
+          --d-border: #24463B;
+          --d-text: #E8F1EC;
+          --d-muted: #9DB0A6;
+        }
+
+        /* Barre d'outils : recherche, boutons, filtres */
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root input.doc-search-input,
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root select.doc-select,
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root .doc-light-btn {
+          background: var(--d-field) !important;
+          color: var(--d-text) !important;
+          border-color: var(--d-border) !important;
+        }
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root .doc-light-btn svg { color: var(--d-text) !important; }
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root input.doc-search-input::placeholder { color: var(--d-muted); }
+
+        /* Bouton grille / liste */
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root .doc-toggle { border-color: var(--d-border) !important; }
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root .doc-toggle button { background: var(--d-field) !important; }
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root .doc-toggle button[aria-pressed="true"] { background: #1B4A3A !important; }
+
+        /* Cartes des dossiers */
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root .admin-folder-card {
+          background: var(--d-card) !important;
+          color: var(--d-text) !important;
+          box-shadow: none !important;
+        }
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root .admin-folder-card[data-selected="false"] {
+          border-color: var(--d-border) !important;
+        }
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root .doc-folder-name,
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root .admin-mobile-folder-title {
+          color: var(--d-text) !important;
+        }
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root .doc-folder-count,
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root .admin-mobile-folder-subtitle,
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root .admin-mobile-folder-chevron {
+          color: var(--d-muted) !important;
+        }
+
+        /* Badges de statut (desktop + mobile) */
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root .st-Complete {
+          background: transparent !important; color: #4ADE80 !important;
+        }
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root .st-Incomplete {
+          background: rgba(245,180,60,.18) !important; color: #F5C56B !important;
+        }
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root .st-Empty {
+          background: rgba(255,255,255,.08) !important; color: #B4C2BA !important;
+        }
+
+        /* Badge Locked / Upload allowed */
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root .doc-lock-badge.is-locked {
+          background: rgba(255,255,255,.08) !important; color: #B4C2BA !important;
+        }
+        :is(body[data-theme="dark"], body.theme-dark) .doc-root .doc-lock-badge.is-allowed {
+          background: rgba(74,222,128,.16) !important; color: #4ADE80 !important;
+        }
       `}</style>
 
       {/* Toolbar */}
@@ -162,27 +266,31 @@ export default function DocumentsTab({ documents = [], docLoading = false, docEr
         <div style={{ fontWeight: 700, fontSize: 18, color: TEXT, whiteSpace: "nowrap" }}>All documents</div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <div style={{ position: "relative" }}>
-            <FiSearch size={14} style={{ position: "absolute", left: 10, top: 10, color: MUTED }} />
+            <FiSearch size={14} style={{ position: "absolute", left: 10, top: 10, color: MUTED_DARK }} />
             <input
+              className="doc-search-input"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search in documents..."
-              style={{ padding: "8px 32px 8px 28px", borderRadius: 999, border: `1px solid ${BORDER}`, background: "#fff", fontSize: 13, width: 250, color: TEXT, outline: "none" }}
+              style={{ padding: "8px 32px 8px 28px", borderRadius: 999, border: `1px solid ${BORDER}`, background: "#fff", fontSize: 13, width: 250, color: TEXT_DARK, outline: "none" }}
             />
           </div>
-          <div style={{ display: "inline-flex", border: `1px solid ${BORDER}`, borderRadius: 8, overflow: "hidden" }}>
-            <button onClick={() => setViewGrid(true)} style={{ border: "none", background: viewGrid ? "#E8F1E8" : "#fff", padding: 8, cursor: "pointer" }} aria-label="Grid"><FiGrid size={16} color={viewGrid ? GREEN : MUTED} /></button>
-            <button onClick={() => setViewGrid(false)} style={{ border: "none", background: !viewGrid ? "#E8F1E8" : "#fff", padding: 8, cursor: "pointer" }} aria-label="List"><FiList size={16} color={!viewGrid ? GREEN : MUTED} /></button>
+          <div className="doc-toggle" style={{ display: "inline-flex", border: `1px solid ${BORDER}`, borderRadius: 8, overflow: "hidden" }}>
+            <button aria-pressed={viewGrid} onClick={() => setViewGrid(true)} style={{ border: "none", background: viewGrid ? "#E8F1E8" : "#fff", padding: 8, cursor: "pointer" }} aria-label="Grid"><FiGrid size={16} color={viewGrid ? GREEN : MUTED_DARK} /></button>
+            <button aria-pressed={!viewGrid} onClick={() => setViewGrid(false)} style={{ border: "none", background: !viewGrid ? "#E8F1E8" : "#fff", padding: 8, cursor: "pointer" }} aria-label="List"><FiList size={16} color={!viewGrid ? GREEN : MUTED_DARK} /></button>
           </div>
-          <button onClick={async () => {
-            const name = prompt("Folder name?"); if (!name) return;
-            try {
-              // Call folder creation endpoint (backend service available via direct axios if needed)
-              const token = localStorage.getItem("token");
-              const res = await fetch("/api/folders", { method: "POST", headers: { "Content-Type":"application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ dossierId: dossierId || 1, name }) });
-              const r = await res.json(); if (r.success) alert("Folder created: " + name); else alert("Failed");
-            } catch (e) { alert("Error: " + (e?.message || e)); }
-          }} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 999, border: `1px solid ${BORDER}`, background: "#fff", color: TEXT, fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", cursor: "pointer" }}>
+          <button
+            className="doc-light-btn"
+            onClick={async () => {
+              const name = prompt("Folder name?"); if (!name) return;
+              try {
+                const token = localStorage.getItem("token");
+                const res = await fetch("/api/folders", { method: "POST", headers: { "Content-Type":"application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ dossierId: dossierId || 1, name }) });
+                const r = await res.json(); if (r.success) alert("Folder created: " + name); else alert("Failed");
+              } catch (e) { alert("Error: " + (e?.message || e)); }
+            }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 999, border: `1px solid ${BORDER}`, background: "#fff", color: TEXT_DARK, fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", cursor: "pointer" }}
+          >
             <FiFolderPlus size={14} /> New folder
           </button>
           <button onClick={() => fileInputRef.current && fileInputRef.current.click()} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 999, background: GREEN, color: "#fff", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", border: "none", boxShadow: "0 2px 8px rgba(4,120,87,.2)", cursor: "pointer" }}>
@@ -190,7 +298,7 @@ export default function DocumentsTab({ documents = [], docLoading = false, docEr
           </button>
           <input ref={fileInputRef} type="file" style={{ display: "none" }} onChange={async (e) => {
             const f = e.target.files?.[0]; if (!f) return;
-            const form = new FormData(); form.append("file", f); form.append("category", "Personal");
+            const form = new FormData(); form.append("file", f); form.append("category", selectedFolder || "Personal");
             try {
               await uploadDocument(dossierId || 1, form);
               await onReload();
@@ -206,7 +314,7 @@ export default function DocumentsTab({ documents = [], docLoading = false, docEr
       <div className="folder-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0,1fr))", gap: 14, marginBottom: 24, minWidth: 0 }}>
         <style>{`@media (max-width: 1100px){.folder-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
         @media (max-width: 800px){.folder-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
-        @media (max-width: 500px){.folder-grid{grid-template-columns:repeat(1,minmax(0,1fr))!important}}`}</style>
+        @media (max-width: 700px){.folder-grid{grid-template-columns:1fr!important}}`}</style>
         {folders.map((f) => (
           <div
             key={f.name}
@@ -214,12 +322,14 @@ export default function DocumentsTab({ documents = [], docLoading = false, docEr
             tabIndex={0}
             onClick={() => setSelectedFolder(f.selected ? null : f.name)}
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedFolder(f.selected ? null : f.name); } }}
+            className="admin-folder-card"
+            data-selected={f.selected ? "true" : "false"}
             style={{
               border: f.selected ? `1.5px solid #0B7A3E` : `1px solid ${BORDER}`,
               borderRadius: 16,
               padding: 16,
               background: CARD_BG,
-              color: TEXT,
+              color: TEXT_DARK,
               textAlign: "center",
               cursor: "pointer",
               height: 180,
@@ -235,7 +345,7 @@ export default function DocumentsTab({ documents = [], docLoading = false, docEr
           >
             <div style={{ position: "absolute", top: 8, right: 8 }} ref={openFolderMenuKey === f.name ? folderMenuRef : null}>
               <button type="button" style={{ border: "none", background: "transparent", cursor: "pointer" }} aria-label="Menu" onClick={(e) => { e.stopPropagation(); setOpenFolderMenuKey(prev => prev === f.name ? null : f.name); }}>
-                <FiMoreVertical size={14} color={MUTED} />
+                <FiMoreVertical size={14} color={MUTED_DARK} />
               </button>
               {openFolderMenuKey === f.name && (
                 <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", background: "#fff", border: `1px solid ${BORDER}`, borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,.12)", padding: 6, minWidth: 160, zIndex: 50 }} role="menu">
@@ -250,17 +360,52 @@ export default function DocumentsTab({ documents = [], docLoading = false, docEr
               )}
             </div>
             <div style={{ marginTop: 14 }}><InlineFolderIcon status={f.status} /></div>
-            <div style={{ fontWeight: 600, fontSize: 14, marginTop: 4, color: TEXT }}>{f.name}</div>
+            <div className="doc-folder-name" style={{ fontWeight: 600, fontSize: 14, marginTop: 4, color: TEXT_DARK }}>{f.name}</div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}>
-              <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 999, fontSize: 11, fontWeight: 700, background: f.status === "Complete" ? "transparent" : f.status === "Incomplete" ? "#FBE9C8" : "#DADEDA", color: f.status === "Complete" ? "#0B7A3E" : f.status === "Incomplete" ? "#B7791F" : "#6B746E", whiteSpace: "nowrap" }}>
+              <span className={"st-" + f.status} style={{ display: "inline-block", padding: "2px 8px", borderRadius: 999, fontSize: 11, fontWeight: 700, background: f.status === "Complete" ? "transparent" : f.status === "Incomplete" ? "#FBE9C8" : "#DADEDA", color: f.status === "Complete" ? "#0B7A3E" : f.status === "Incomplete" ? "#B7791F" : "#6B746E", whiteSpace: "nowrap" }}>
                 {f.status}
               </span>
-              <span style={{ fontSize: 12, color: "#7C877F" }}>{f.count === 0 ? "Empty / No files" : f.count === 1 ? "1 file" : `${f.count} files`}</span>
+              <span className="doc-folder-count" style={{ fontSize: 12, color: "#7C877F" }}>{f.count === 0 ? "Empty / No files" : f.count === 1 ? "1 file" : `${f.count} files`}</span>
             </div>
             <div style={{ width: "100%", textAlign: "center", marginTop: 2 }}>
-              <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 999, fontSize: 10, fontWeight: 700, background: folderAccessState[f.name] ? "#E8F5E9" : "#ECEFF1", color: folderAccessState[f.name] ? "#047857" : "#78909C", whiteSpace: "nowrap" }}>
+              <span className={"doc-lock-badge " + (folderAccessState[f.name] ? "is-allowed" : "is-locked")} style={{ display: "inline-block", padding: "2px 8px", borderRadius: 999, fontSize: 10, fontWeight: 700, background: folderAccessState[f.name] ? "#E8F5E9" : "#ECEFF1", color: folderAccessState[f.name] ? "#047857" : "#78909C", whiteSpace: "nowrap" }}>
                 <FiLock size={10} style={{ verticalAlign: "middle", marginRight: 2 }} /> {folderAccessState[f.name] ? "Upload allowed" : "Locked"}
               </span>
+            </div>
+
+            {/* Mobile layout (shown only <= 700px) */}
+            <div className="admin-mobile-folder-content" aria-label={`Dossier ${f.name}`}>
+              <span className="admin-mobile-folder-chevron">›</span>
+              <div className="admin-mobile-folder-icon"><InlineFolderIcon status={f.status} /></div>
+              <div className="admin-mobile-folder-main">
+                <div className="admin-mobile-folder-title-row">
+                  <span className="admin-mobile-folder-title">{f.name}</span>
+                  <span
+                    className={"admin-mobile-folder-status st-" + f.status}
+                    style={{
+                      background: f.status === "Complete" ? "transparent" : f.status === "Incomplete" ? "#FBE9C8" : "#E1E5E0",
+                      color: f.status === "Complete" ? "#0B7A3E" : f.status === "Incomplete" ? "#B7791F" : "#6B746E",
+                    }}
+                  >
+                    {f.status === "Complete" ? "Complete" : f.status === "Incomplete" ? "Being collected" : "Waiting on documents"}
+                  </span>
+                </div>
+                <div className="admin-mobile-folder-subtitle">
+                  {f.count === 0
+                    ? (f.selected ? "No documents · you can add files here" : "No documents")
+                    : `${f.count} document${f.count > 1 ? "s" : ""} · click to open`}
+                </div>
+              </div>
+              {f.selected && (
+                <button
+                  type="button"
+                  className="admin-mobile-folder-upload"
+                  style={{ background: "#067D45", color: "#fff" }}
+                  onClick={(e) => { e.stopPropagation(); setSelectedFolder(f.name); fileInputRef.current && fileInputRef.current.click(); }}
+                >
+                  <FiUpload size={16} /> Upload files
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -270,12 +415,12 @@ export default function DocumentsTab({ documents = [], docLoading = false, docEr
       {deleteDialog && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={() => !deleteDialog.deleting && setDeleteDialog(null)}>
           <div style={{ background: "#fff", borderRadius: 16, padding: 24, maxWidth: 420, width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,.2)" }} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ margin: "0 0 6px", fontSize: 16, fontWeight: 700, color: TEXT }}>Delete this document?</h3>
-            <div style={{ fontWeight: 600, color: TEXT, marginBottom: 4 }}>{deleteDialog.doc?.title || deleteDialog.doc?.fileName || "—"}</div>
-            <div style={{ fontSize: 12, color: MUTED, marginBottom: 16 }}>This cannot be undone.</div>
+            <h3 style={{ margin: "0 0 6px", fontSize: 16, fontWeight: 700, color: TEXT_DARK }}>Delete this document?</h3>
+            <div style={{ fontWeight: 600, color: TEXT_DARK, marginBottom: 4 }}>{deleteDialog.doc?.title || deleteDialog.doc?.fileName || "—"}</div>
+            <div style={{ fontSize: 12, color: MUTED_DARK, marginBottom: 16 }}>This cannot be undone.</div>
             {deleteDialog.error && <div style={{ color: "#C62828", fontSize: 12, marginBottom: 12 }}>{deleteDialog.error}</div>}
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button disabled={deleteDialog.deleting} onClick={() => setDeleteDialog(null)} style={{ padding: "8px 14px", borderRadius: 999, border: `1px solid ${BORDER}`, background: "#fff", fontWeight: 600, fontSize: 13, cursor: deleteDialog.deleting ? "not-allowed" : "pointer", opacity: deleteDialog.deleting ? 0.6 : 1 }}>Cancel</button>
+              <button disabled={deleteDialog.deleting} onClick={() => setDeleteDialog(null)} style={{ padding: "8px 14px", borderRadius: 999, border: `1px solid ${BORDER}`, background: "#fff", color: TEXT_DARK, fontWeight: 600, fontSize: 13, cursor: deleteDialog.deleting ? "not-allowed" : "pointer", opacity: deleteDialog.deleting ? 0.6 : 1 }}>Cancel</button>
               <button disabled={deleteDialog.deleting} onClick={async () => { setDeleteDialog({ ...deleteDialog, deleting: true, error: null }); try { await deleteDocument(deleteDialog.doc.id); setDeleteDialog(null); if (onReload) await onReload(); } catch (err) { setDeleteDialog({ ...deleteDialog, deleting: false, error: err?.response?.data?.message || err?.message || "Delete failed" }); } }} style={{ padding: "8px 14px", borderRadius: 999, border: "none", background: "#C62828", color: "#fff", fontWeight: 700, fontSize: 13, cursor: deleteDialog.deleting ? "not-allowed" : "pointer", opacity: deleteDialog.deleting ? 0.7 : 1 }}>{deleteDialog.deleting ? "Deleting…" : "Delete"}</button>
             </div>
           </div>
@@ -292,16 +437,16 @@ export default function DocumentsTab({ documents = [], docLoading = false, docEr
         </div>
 
         <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
-          <select value={filterType} onChange={(e) => setFilterType(e.target.value)} style={{ padding: "6px 28px 6px 10px", borderRadius: 999, border: `1px solid ${BORDER}`, fontSize: 12, background: "#fff", color: TEXT, cursor: "pointer" }}>
+          <select className="doc-select" value={filterType} onChange={(e) => setFilterType(e.target.value)} style={{ padding: "6px 28px 6px 10px", borderRadius: 999, border: `1px solid ${BORDER}`, fontSize: 12, background: "#fff", color: TEXT_DARK, cursor: "pointer" }}>
             {["Any type", "PDF", "DOC", "JPG", "PNG"].map((v) => <option key={v}>{v}</option>)}
           </select>
-          <select value={filterOwner} onChange={(e) => setFilterOwner(e.target.value)} style={{ padding: "6px 28px 6px 10px", borderRadius: 999, border: `1px solid ${BORDER}`, fontSize: 12, background: "#fff", color: TEXT, cursor: "pointer" }}>
+          <select className="doc-select" value={filterOwner} onChange={(e) => setFilterOwner(e.target.value)} style={{ padding: "6px 28px 6px 10px", borderRadius: 999, border: `1px solid ${BORDER}`, fontSize: 12, background: "#fff", color: TEXT_DARK, cursor: "pointer" }}>
             {["Anyone", "Student", "Admin"].map((v) => <option key={v}>{v}</option>)}
           </select>
-          <select value={filterState} onChange={(e) => setFilterState(e.target.value)} style={{ padding: "6px 28px 6px 10px", borderRadius: 999, border: `1px solid ${BORDER}`, fontSize: 12, background: "#fff", color: TEXT, cursor: "pointer" }}>
+          <select className="doc-select" value={filterState} onChange={(e) => setFilterState(e.target.value)} style={{ padding: "6px 28px 6px 10px", borderRadius: 999, border: `1px solid ${BORDER}`, fontSize: 12, background: "#fff", color: TEXT_DARK, cursor: "pointer" }}>
             {["Any state", "Verified", "Pending", "Rejected"].map((v) => <option key={v}>{v}</option>)}
           </select>
-          <select value={filterSort} onChange={(e) => setFilterSort(e.target.value)} style={{ padding: "6px 28px 6px 10px", borderRadius: 999, border: `1px solid ${BORDER}`, fontSize: 12, background: "#fff", color: TEXT, cursor: "pointer" }}>
+          <select className="doc-select" value={filterSort} onChange={(e) => setFilterSort(e.target.value)} style={{ padding: "6px 28px 6px 10px", borderRadius: 999, border: `1px solid ${BORDER}`, fontSize: 12, background: "#fff", color: TEXT_DARK, cursor: "pointer" }}>
             {["Last modified", "Name A-Z", "Oldest first"].map((v) => <option key={v}>{v}</option>)}
           </select>
         </div>
@@ -335,7 +480,7 @@ export default function DocumentsTab({ documents = [], docLoading = false, docEr
                     <tr key={doc.id || i} style={{ borderBottom: `1px solid ${BORDER}`, height: 60 }}>
                       <td style={{ padding: "10px", verticalAlign: "middle" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{ width: 32, height: 32, borderRadius: 8, background: ((doc.type||"").toLowerCase().replace(".","").includes("pdf")||(doc.extension||"").toLowerCase()==="pdf"||(doc.fileName||"").toLowerCase().endsWith(".pdf")) ? "#FBE3E3" : (doc.type||"").toUpperCase()==="DOC" ? "#DCE9FB" : ((doc.type||"").toLowerCase().includes("jpg")||(doc.type||"").toLowerCase().includes("png")||(doc.extension||"").toLowerCase()==="jpg"||(doc.extension||"").toLowerCase()==="png"||(doc.fileName||"").toLowerCase().match(/.(jpg|png)/)) ? "#DDF1E4" : "#F3F4F6", color: ((doc.type||"").toLowerCase().replace(".","").includes("pdf")||((doc.fileName||"").toLowerCase().endsWith(".pdf"))) ? "#C62828" : (doc.type||"").toUpperCase()==="DOC" ? "#2B5FB4" : ((doc.type||"").toLowerCase().includes("jpg")||(doc.type||"").toLowerCase().includes("png")) ? "#17A05D" : MUTED, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 11, flexShrink: 0 }}><span style={{fontSize:10,fontWeight:800}}>{((doc.type||"").toLowerCase().replace(".","").includes("pdf")||((doc.fileName||"").toLowerCase().endsWith(".pdf"))) ? "PDF" : (doc.type||"").toUpperCase()==="DOC" ? "DOC" : ((doc.type||"").toLowerCase().includes("jpg")||(doc.fileName||"").toLowerCase().endsWith(".jpg")) ? "JPG" : ((doc.type||"").toLowerCase().includes("png")||(doc.fileName||"").toLowerCase().endsWith(".png")) ? "PNG" : (doc.type||"PDF").toUpperCase()}</span></div>
+                          <div style={{ width: 32, height: 32, borderRadius: 8, background: ((doc.type||"").toLowerCase().replace(".","").includes("pdf")||(doc.extension||"").toLowerCase()==="pdf"||(doc.fileName||"").toLowerCase().endsWith(".pdf")) ? "#FBE3E3" : (doc.type||"").toUpperCase()==="DOC" ? "#DCE9FB" : ((doc.type||"").toLowerCase().includes("jpg")||(doc.type||"").toLowerCase().includes("png")||(doc.extension||"").toLowerCase()==="jpg"||(doc.extension||"").toLowerCase()==="png"||(doc.fileName||"").toLowerCase().match(/.(jpg|png)/)) ? "#DDF1E4" : "#F3F4F6", color: ((doc.type||"").toLowerCase().replace(".","").includes("pdf")||((doc.fileName||"").toLowerCase().endsWith(".pdf"))) ? "#C62828" : (doc.type||"").toUpperCase()==="DOC" ? "#2B5FB4" : ((doc.type||"").toLowerCase().includes("jpg")||(doc.type||"").toLowerCase().includes("png")) ? "#17A05D" : MUTED_DARK, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 11, flexShrink: 0 }}><span style={{fontSize:10,fontWeight:800}}>{((doc.type||"").toLowerCase().replace(".","").includes("pdf")||((doc.fileName||"").toLowerCase().endsWith(".pdf"))) ? "PDF" : (doc.type||"").toUpperCase()==="DOC" ? "DOC" : ((doc.type||"").toLowerCase().includes("jpg")||(doc.fileName||"").toLowerCase().endsWith(".jpg")) ? "JPG" : ((doc.type||"").toLowerCase().includes("png")||(doc.fileName||"").toLowerCase().endsWith(".png")) ? "PNG" : (doc.type||"PDF").toUpperCase()}</span></div>
                           <div>
                           </div>
                           <div>

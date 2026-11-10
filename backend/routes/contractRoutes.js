@@ -11,19 +11,10 @@ const {
   getContractStatus
 } = require('../controllers/contractController');
 const authMiddleware = require('../middlewares/authMiddleware');
+const { requireAdmin, requireStaff } = require('../middlewares/roleMiddleware');
+const { requireSection } = require('../middlewares/requireRole');
 
 const router = express.Router();
-
-// Admin check middleware
-const requireAdmin = (req, res, next) => {
-  if (req.user.role !== 'ADMIN') {
-    return res.status(403).json({
-      success: false,
-      message: 'Accès non autorisé - Admin requis'
-    });
-  }
-  next();
-};
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -66,19 +57,19 @@ router.post('/upload', authMiddleware, upload.single('contract'), uploadContract
 router.get('/my-contract', authMiddleware, getContractByUserId);
 
 // Get contract by user ID (admin only)
-router.get('/user/:userId', authMiddleware, requireAdmin, getContractByUserIdAdmin);
+router.get('/user/:userId', authMiddleware, requireStaff, requireSection('users'), getContractByUserIdAdmin);
 
 // Get all contracts (admin only)
-router.get('/', authMiddleware, requireAdmin, getAllContracts);
+router.get('/', authMiddleware, requireStaff, requireSection('payments'), getAllContracts);
 
 // Update contract status (admin only)
-router.patch('/:id/status', authMiddleware, requireAdmin, updateContractStatus);
+router.patch('/:id/status', authMiddleware, requireStaff, requireSection('payments'), updateContractStatus);
 
 // Download contract (admin only)
-router.get('/:id/download', authMiddleware, requireAdmin, downloadContract);
+router.get('/:id/download', authMiddleware, requireStaff, requireSection('payments'), downloadContract);
 
 // Delete contract (admin only)
-router.delete('/:id', authMiddleware, requireAdmin, deleteContract);
+router.delete('/:id', authMiddleware, requireStaff, requireSection('payments'), deleteContract);
 
 // Get contract status (authenticated users)
 router.get('/status/:userId', authMiddleware, getContractStatus);

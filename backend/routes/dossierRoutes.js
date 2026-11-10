@@ -2,32 +2,33 @@ const express = require('express');
 const router = express.Router();
 const dossierController = require('../controllers/dossierController');
 const authMiddleware = require('../middlewares/authMiddleware');
-const { requireAdmin, requireSelfOrAdmin } = require('../middlewares/roleMiddleware');
+const { requireAdmin, requireSelfOrAdmin, requireStaff } = require('../middlewares/roleMiddleware');
+const { requireSection } = require('../middlewares/requireRole');
 
 // All dossier routes require authentication
 router.use(authMiddleware);
 
-// --- Admin-only management ---
+// --- Admin/staff management ---
 // Create a new dossier
-router.post('/', requireAdmin, dossierController.createDossier);
+router.post('/', requireStaff, requireSection('students'), dossierController.createDossier);
 
 // Create missing dossiers for existing users
-router.post('/create-missing', requireAdmin, dossierController.createMissingDossiers);
+router.post('/create-missing', requireStaff, requireSection('students'), dossierController.createMissingDossiers);
 
 // Get all dossiers
-router.get('/', requireAdmin, dossierController.getAllDossiers);
+router.get('/', requireStaff, requireSection('students'), dossierController.getAllDossiers);
 
 // Get dossier statistics
-router.get('/stats', requireAdmin, dossierController.getDossierStats);
+router.get('/stats', requireStaff, requireSection('students'), dossierController.getDossierStats);
 
 // Get dossier by ID
-router.get('/:id', requireAdmin, dossierController.getDossierById);
+router.get('/:id', requireStaff, requireSection('students'), dossierController.getDossierById);
 
 // Update dossier (status progression managed by the agency)
-router.put('/:id', requireAdmin, dossierController.updateDossier);
+router.put('/:id', requireStaff, requireSection('students'), dossierController.updateDossier);
 
 // Delete dossier
-router.delete('/:id', requireAdmin, dossierController.deleteDossier);
+router.delete('/:id', requireStaff, requireSection('students'), dossierController.deleteDossier);
 
 // --- Owner or admin ---
 // Get dossiers by user ID

@@ -1,6 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
 const emailService = require('../services/emailService');
-const prisma = new PrismaClient();
+const prisma = require("../config/prisma");
 
 // Create a new dossier
 const createDossier = async (req, res) => {
@@ -130,10 +129,12 @@ const createMissingDossiers = async (req, res) => {
   }
 };
 
-// Get all dossiers
+// Get all dossiers (scoped to agent's office if AGENT)
 const getAllDossiers = async (req, res) => {
   try {
+    const user = req.dbUser || req.user;
     const dossiers = await prisma.dossier.findMany({
+      where: {},
       include: {
         user: {
           select: {
@@ -184,28 +185,13 @@ const getDossierById = async (req, res) => {
       });
     }
     
+    const user = req.dbUser || req.user;
     const dossier = await prisma.dossier.findUnique({
-      where: {
-        id: dossierId
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true
-          }
-        }
-      }
+      where: { id: dossierId },
+      include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } }
     });
 
-    if (!dossier) {
-      return res.status(404).json({
-        success: false,
-        message: "Dossier not found"
-      });
-    }
+    if (!dossier) return res.status(404).json({ success: false, message: "Dossier not found" });
 
     res.status(200).json({
       success: true,

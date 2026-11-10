@@ -68,6 +68,11 @@ const UserDashboard = () => {
         display: contents;
       }
 
+      /* Wrapper autour du Header : le bouton et le menu mobile y sont positionnés */
+      .client-header-wrap {
+        position: relative;
+      }
+
       /* One mobile navigation drawer for all breakpoints (769-1024 included) */
       .client-mobile-menu-button,
       .client-mobile-menu,
@@ -80,14 +85,20 @@ const UserDashboard = () => {
           display: none !important;
         }
 
+        /* Laisse la place au bouton à gauche du titre */
+        .client-header-wrap > header {
+          padding-left: 4rem;
+        }
+
+        /* Bouton dans la barre du haut, centré verticalement dans le header */
         .client-mobile-menu-button {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          position: fixed;
-          top: clamp(8rem, 20vh, 11.5rem);
-          bottom: auto;
-          left: 0.75rem;
+          position: absolute;
+          top: 50%;
+          left: 0.9rem;
+          transform: translateY(-50%);
           width: 42px;
           height: 42px;
           padding: 0;
@@ -127,19 +138,20 @@ const UserDashboard = () => {
           z-index: 1198;
         }
 
+        /* Menu juste sous le header */
         .client-mobile-menu {
           display: flex;
           flex-direction: column;
-          position: fixed;
-          top: calc(clamp(8rem, 20vh, 11.5rem) + 3.25rem);
+          position: absolute;
+          top: calc(100% + 0.5rem);
           bottom: auto;
           left: 0.75rem;
           width: min(235px, 78vw);
-          max-height: calc(100vh - 5rem);
+          max-height: calc(100vh - 8rem);
           overflow-y: auto;
           padding: 0.65rem 0.45rem;
           border: 1px solid var(--border, #dbe4ea);
-          border-radius: 0 16px 16px 16px;
+          border-radius: 16px;
           background: var(--surface, #ffffff);
           color: var(--text, #111827);
           box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
@@ -311,49 +323,51 @@ const UserDashboard = () => {
 
   return (
     <DashboardContainer>
-      <button
-        type="button"
-        className="client-mobile-menu-button"
-        onClick={() => setMobileMenuOpen((isOpen) => !isOpen)}
-        aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
-        aria-expanded={mobileMenuOpen}
-      >
-        {mobileMenuOpen ? <FiX aria-hidden="true" /> : <FiMenu aria-hidden="true" />}
-      </button>
+      <div className="client-header-wrap">
+        <button
+          type="button"
+          className="client-mobile-menu-button"
+          onClick={() => setMobileMenuOpen((isOpen) => !isOpen)}
+          aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          aria-expanded={mobileMenuOpen}
+        >
+          {mobileMenuOpen ? <FiX aria-hidden="true" /> : <FiMenu aria-hidden="true" />}
+        </button>
 
-      {mobileMenuOpen && (
-        <div
-          className="client-mobile-menu-backdrop"
-          onClick={() => setMobileMenuOpen(false)}
-          aria-hidden="true"
+        {mobileMenuOpen && (
+          <div
+            className="client-mobile-menu-backdrop"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
+        {mobileMenuOpen && (
+          <nav className="client-mobile-menu" aria-label="Navigation mobile">
+            {menuItems.map((item) => (
+              <button
+                type="button"
+                key={item.id}
+                className={`client-mobile-menu-item ${activeMenu === item.id ? 'active' : ''}`}
+                onClick={() => {
+                  handleMenuClick(item.id);
+                  setMobileMenuOpen(false);
+                }}
+              >
+                {item.icon}
+                <span>{item.text}</span>
+              </button>
+            ))}
+          </nav>
+        )}
+
+        <Header 
+          onLogout={handleLogout}
+          activeMenu={activeMenu}
+          menuItems={menuItems}
+          onMenuClick={handleMenuClick}
         />
-      )}
-
-      {mobileMenuOpen && (
-        <nav className="client-mobile-menu" aria-label="Navigation mobile">
-          {menuItems.map((item) => (
-            <button
-              type="button"
-              key={item.id}
-              className={`client-mobile-menu-item ${activeMenu === item.id ? 'active' : ''}`}
-              onClick={() => {
-                handleMenuClick(item.id);
-                setMobileMenuOpen(false);
-              }}
-            >
-              {item.icon}
-              <span>{item.text}</span>
-            </button>
-          ))}
-        </nav>
-      )}
-
-      <Header 
-        onLogout={handleLogout}
-        activeMenu={activeMenu}
-        menuItems={menuItems}
-        onMenuClick={handleMenuClick}
-      />
+      </div>
       <MainContent>
         <div className="client-desktop-sidebar">
           <Sidebar

@@ -1,0 +1,10 @@
+const express = require("express");
+const router = express.Router();
+const authMiddleware = require("../middlewares/authMiddleware");
+const { requireStaff } = require("../middlewares/roleMiddleware");
+const controller = require("../controllers/folderController");
+router.get("/dossiers/:id/folders", authMiddleware, controller.getFolders);
+router.post("/folders", authMiddleware, requireStaff, controller.createFolder);
+router.patch("/folders/:id", authMiddleware, requireStaff, controller.renameFolder);
+router.delete("/folders/:id", authMiddleware, requireStaff, controller.deleteFolder);
+module.exports = router;

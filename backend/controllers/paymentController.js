@@ -3,29 +3,27 @@ const prisma = require("../config/prisma");
 // Create a new payment
 const createPayment = async (req, res) => {
   try {
-    const { userId, amount, prixTotal, prixPaye = 0, status = 'PENDING' } = req.body;
+    const { userId: reqUserId, studentId, amount, prixTotal, prixPaye = 0, status = 'PENDING', method, loggedBy } = req.body;
+    const userId = parseInt(reqUserId || studentId);
     
-    // Calculate remaining amount
-    const prixReste = prixTotal - prixPaye;
+    const effectivePrixTotal = (prixTotal != null && !isNaN(parseFloat(prixTotal))) ? parseFloat(prixTotal) : parseFloat(amount || 0);
+    const effectivePrixPaye = parseFloat(prixPaye || 0);
+    const prixReste = effectivePrixTotal - effectivePrixPaye;
     
+    if (req.user && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'Seul un admin peut créer un paiement' });
+    }
     const payment = await prisma.payment.create({
       data: {
-        userId: parseInt(userId),
+        userId,
         amount: parseFloat(amount),
-        prixTotal: parseFloat(prixTotal),
-        prixPaye: parseFloat(prixPaye),
-        prixReste: parseFloat(prixReste),
-        status
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true
-          }
-        }
+        prixTotal: effectivePrixTotal,
+        prixPaye: effectivePrixPaye,
+        prixReste,
+        status: 'PENDING',
+        method: method || null,
+        loggedBy: null,
+        paidAt: null
       }
     });
 
@@ -48,16 +46,7 @@ const createPayment = async (req, res) => {
 const getAllPayments = async (req, res) => {
   try {
     const payments = await prisma.payment.findMany({
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true
-          }
-        }
-      },
+      where: {},
       orderBy: {
         createdAt: 'desc'
       }
@@ -86,16 +75,7 @@ const getPaymentById = async (req, res) => {
       where: {
         id: parseInt(id)
       },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true
-          }
-        }
-      }
+
     });
 
     if (!payment) {
@@ -155,16 +135,7 @@ const updatePayment = async (req, res) => {
         id: parseInt(id)
       },
       data: updateData,
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true
-          }
-        }
-      }
+
     });
 
     res.status(200).json({
@@ -237,16 +208,7 @@ const addPayment = async (req, res) => {
         prixReste: newPrixReste,
         status: newStatus
       },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true
-          }
-        }
-      }
+
     });
 
     res.status(200).json({
@@ -290,41 +252,35 @@ const deletePayment = async (req, res) => {
   }
 };
 
+// Get payments for the authenticated user (client read-only via /me)
+const getMyPayments = async (req, res) => {
+  try {
+    if (!req.user || !req.user.userId) {
+      return res.status(401).json({ success: false, message: 'Non authentifié' });
+    }
+    const payments = await prisma.payment.findMany({
+      where: { userId: parseInt(req.user.userId) },
+            orderBy: { createdAt: 'desc' }
+    });
+    res.status(200).json({ success: true, data: payments });
+  } catch (error) {
+    console.error('Error fetching my payments:', error, '| userId=', req.user?.userId, '| stack=', error.stack);
+    res.status(500).json({ success: false, message: error.message || 'Erreur', error: error.message });
+  }
+};
+
 // Get payments by user ID
 const getPaymentsByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
-    
     const payments = await prisma.payment.findMany({
-      where: {
-        userId: parseInt(userId)
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
+      where: { userId: parseInt(userId) },
+      orderBy: { createdAt: 'desc' }
     });
-
-    res.status(200).json({
-      success: true,
-      data: payments
-    });
+    res.status(200).json({ success: true, data: payments });
   } catch (error) {
     console.error("Error fetching user payments:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching user payments",
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: "Error fetching user payments", error: error.message });
   }
 };
 
@@ -332,53 +288,26 @@ const getPaymentsByUserId = async (req, res) => {
 const getPaymentStats = async (req, res) => {
   try {
     const totalPayments = await prisma.payment.count();
-    const paidPayments = await prisma.payment.count({
-      where: { status: 'PAID' }
-    });
-    const pendingPayments = await prisma.payment.count({
-      where: { status: 'PENDING' }
-    });
-
-    const totalAmount = await prisma.payment.aggregate({
-      _sum: { prixTotal: true }
-    });
-    
-    const totalPaid = await prisma.payment.aggregate({
-      _sum: { prixPaye: true }
-    });
-    
-    const totalRemaining = await prisma.payment.aggregate({
-      _sum: { prixReste: true }
-    });
-
+    const paidPayments = await prisma.payment.count({ where: { status: 'PAID' } });
+    const pendingPayments = await prisma.payment.count({ where: { status: 'PENDING' } });
+    const totalAmount = await prisma.payment.aggregate({ _sum: { amount: true } });
+    const totalPaid = await prisma.payment.aggregate({ _sum: { amount: true } });
+    const totalRemaining = await prisma.payment.aggregate({ _sum: { amount: true } });
     res.status(200).json({
       success: true,
       data: {
-        totalPayments,
-        paidPayments,
-        pendingPayments,
-        totalAmount: totalAmount._sum.prixTotal || 0,
-        totalPaid: totalPaid._sum.prixPaye || 0,
-        totalRemaining: totalRemaining._sum.prixReste || 0
+        totalPayments, paidPayments, pendingPayments,
+        totalAmount: totalAmount._sum.amount || 0,
+        totalPaid: totalPaid._sum.amount || 0,
+        totalRemaining: totalRemaining._sum.amount || 0
       }
     });
   } catch (error) {
     console.error("Error fetching payment stats:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching payment stats",
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: "Error fetching payment stats", error: error.message });
   }
 };
 
 module.exports = {
-  createPayment,
-  getAllPayments,
-  getPaymentById,
-  updatePayment,
-  addPayment,
-  deletePayment,
-  getPaymentsByUserId,
-  getPaymentStats
+  createPayment, getAllPayments, getPaymentById, updatePayment, addPayment, deletePayment, getPaymentsByUserId, getMyPayments, getPaymentStats
 };
