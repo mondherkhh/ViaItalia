@@ -1,5 +1,14 @@
 import styled from 'styled-components';
 
+/*
+ * DARK MODE
+ * Le helper ci-dessous cible les mécanismes de thème les plus courants :
+ *   <html data-theme="dark">, classe .dark ou .dark-mode sur html/body.
+ * ➜ Si ton bouton soleil/lune utilise un autre sélecteur, modifie
+ *   uniquement la constante DARK ci-dessous.
+ */
+const DARK = `[data-theme='dark'] &, .dark &, .dark-mode &, body.dark-mode &`;
+
 export const UniversityContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -11,7 +20,7 @@ export const UniversityForm = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
-  
+
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
     gap: 1rem;
@@ -20,30 +29,36 @@ export const UniversityForm = styled.div`
 `;
 
 export const UniversityCard = styled.div`
-  background: rgba(255,255,255,0.85);
+  background: rgba(255, 255, 255, 0.85);
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 1.5rem;
   text-align: center;
   transition: all 0.3s ease;
   animation: fadeInUp 0.5s ease;
-  
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
   }
-  
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+
+  ${DARK} {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: none;
   }
-  
+
+  ${DARK}:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(16, 185, 129, 0.45);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45);
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   @media (max-width: 768px) {
     padding: 1rem;
   }
@@ -52,7 +67,7 @@ export const UniversityCard = styled.div`
 export const UniversityIcon = styled.div`
   font-size: 3rem;
   margin-bottom: 1rem;
-  
+
   @media (max-width: 768px) {
     font-size: 2.5rem;
     margin-bottom: 0.75rem;
@@ -64,7 +79,11 @@ export const UniversityTitle = styled.h3`
   font-weight: 600;
   color: #111827;
   margin: 0 0 1rem 0;
-  
+
+  ${DARK} {
+    color: #f3f4f6;
+  }
+
   @media (max-width: 768px) {
     font-size: 1rem;
     margin-bottom: 0.75rem;
@@ -81,28 +100,43 @@ export const UniversitySelect = styled.select`
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  
-  &::placeholder {
-    color: rgba(255, 255, 255, 0.5);
-  }
-  
+  color-scheme: light;
+
   &:focus {
     outline: none;
     border-color: #10b981;
-    background: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
   }
-  
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
-  
+
   option {
     background: #fff;
     color: #111827;
   }
-  
+
+  ${DARK} {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #f3f4f6;
+    color-scheme: dark;
+  }
+
+  ${DARK}:focus {
+    border-color: #10b981;
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+  }
+
+  ${DARK} option {
+    background: #111827;
+    color: #f3f4f6;
+  }
+
   @media (max-width: 768px) {
     padding: 0.625rem 0.875rem;
     font-size: 0.85rem;
@@ -115,18 +149,17 @@ export const UniversitySummary = styled.div`
   border-radius: 12px;
   padding: 1.5rem;
   animation: slideUp 0.5s ease 0.2s both;
-  
-  @keyframes slideUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+
+  ${DARK} {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.1);
   }
-  
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   @media (max-width: 768px) {
     padding: 1rem;
   }
@@ -137,7 +170,11 @@ export const SummaryTitle = styled.h3`
   font-weight: 600;
   color: #111827;
   margin: 0 0 1.5rem 0;
-  
+
+  ${DARK} {
+    color: #f3f4f6;
+  }
+
   @media (max-width: 768px) {
     font-size: 1.125rem;
     margin-bottom: 1rem;
@@ -148,7 +185,7 @@ export const SummaryGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
-  
+
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
     gap: 1rem;
@@ -158,15 +195,26 @@ export const SummaryGrid = styled.div`
 export const SummaryItem = styled.div`
   text-align: center;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   transition: all 0.3s ease;
-  
+
   &:hover {
-    background: rgba(255, 255, 255, 0.1);
     transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
   }
-  
+
+  ${DARK} {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  ${DARK}:hover {
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+  }
+
   @media (max-width: 768px) {
     padding: 0.75rem;
   }
@@ -175,7 +223,7 @@ export const SummaryItem = styled.div`
 export const SummaryIcon = styled.div`
   font-size: 2rem;
   margin-bottom: 0.5rem;
-  
+
   @media (max-width: 768px) {
     font-size: 1.75rem;
     margin-bottom: 0.375rem;
@@ -188,7 +236,11 @@ export const SummaryLabel = styled.p`
   font-weight: 500;
   margin: 0;
   text-transform: capitalize;
-  
+
+  ${DARK} {
+    color: #e5e7eb;
+  }
+
   @media (max-width: 768px) {
     font-size: 0.85rem;
   }
@@ -198,7 +250,7 @@ export const ActionButtons = styled.div`
   display: flex;
   justify-content: center;
   margin-top: 2rem;
-  
+
   @media (max-width: 768px) {
     margin-top: 1.5rem;
   }
@@ -216,13 +268,13 @@ export const ActionButton = styled.button`
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  
+
   ${props => {
     if (props.variant === 'primary') {
       return `
         background: linear-gradient(135deg, #10b981, #059669);
         color: white;
-        
+
         &:hover:not(:disabled) {
           transform: translateY(-2px);
           box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
@@ -232,7 +284,7 @@ export const ActionButton = styled.button`
       return `
         background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: white;
-        
+
         &:hover {
           transform: translateY(-2px);
           box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
@@ -240,17 +292,21 @@ export const ActionButton = styled.button`
       `;
     }
   }}
-  
+
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
   }
-  
+
+  ${DARK}:disabled {
+    opacity: 0.45;
+  }
+
   &:active:not(:disabled) {
     transform: translateY(0);
   }
-  
+
   @media (max-width: 768px) {
     padding: 0.625rem 1.25rem;
     font-size: 0.9rem;
@@ -261,7 +317,7 @@ export const LoadingSpinner = styled.svg`
   width: 20px;
   height: 20px;
   animation: spin 1s linear infinite;
-  
+
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -281,7 +337,11 @@ export const ModalOverlay = styled.div`
   justify-content: center;
   z-index: 1000;
   animation: fadeIn 0.3s ease;
-  
+
+  ${DARK} {
+    background: rgba(0, 0, 0, 0.7);
+  }
+
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -297,18 +357,18 @@ export const ModalContainer = styled.div`
   max-height: 90vh;
   overflow-y: auto;
   animation: scaleIn 0.3s ease;
-  
-  @keyframes scaleIn {
-    from {
-      opacity: 0;
-      transform: scale(0.9);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
+
+  ${DARK} {
+    background: #111827;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
   }
-  
+
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
   @media (max-width: 768px) {
     padding: 1.5rem;
     margin: 1rem;
@@ -328,7 +388,7 @@ export const ModalIcon = styled.div`
   align-items: center;
   justify-content: center;
   margin: 0 auto 1rem;
-  
+
   svg {
     width: 24px;
     height: 24px;
@@ -341,6 +401,10 @@ export const ModalTitle = styled.h3`
   font-weight: 600;
   color: #1f2937;
   margin: 0 0 0.5rem 0;
+
+  ${DARK} {
+    color: #f3f4f6;
+  }
 `;
 
 export const ModalMessage = styled.p`
@@ -348,12 +412,16 @@ export const ModalMessage = styled.p`
   color: #6b7280;
   margin: 0 0 1.5rem 0;
   line-height: 1.5;
+
+  ${DARK} {
+    color: #9ca3af;
+  }
 `;
 
 export const ModalButtons = styled.div`
   display: flex;
   gap: 1rem;
-  
+
   @media (max-width: 768px) {
     flex-direction: column;
   }
@@ -368,13 +436,13 @@ export const ModalButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  
+
   ${props => {
     if (props.variant === 'primary') {
       return `
         background: #10b981;
         color: white;
-        
+
         &:hover {
           background: #059669;
         }
@@ -383,19 +451,36 @@ export const ModalButton = styled.button`
       return `
         background: #d1d5db;
         color: #374151;
-        
+
         &:hover {
           background: #9ca3af;
         }
       `;
     }
   }}
+
+  ${props =>
+    props.variant !== 'primary'
+      ? `
+    ${DARK} {
+      background: rgba(255, 255, 255, 0.1);
+      color: #f3f4f6;
+    }
+    ${DARK}:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+  `
+      : ''}
 `;
 
 export const EmptyState = styled.div`
   text-align: center;
   padding: 2rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: #6b7280;
+
+  ${DARK} {
+    color: rgba(255, 255, 255, 0.6);
+  }
 `;
 
 export const EmptyStateIcon = styled.div`
@@ -407,7 +492,7 @@ export const EmptyStateIcon = styled.div`
 export const EmptyStateText = styled.p`
   font-size: 1rem;
   margin: 0;
-  
+
   &:not(:last-child) {
     margin-bottom: 0.5rem;
   }
@@ -416,21 +501,35 @@ export const EmptyStateText = styled.p`
 export const ProgressIndicator = styled.div`
   margin-top: 1rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
+
+  ${DARK} {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
 `;
 
 export const ProgressText = styled.p`
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: #374151;
   margin: 0 0 0.5rem 0;
+
+  ${DARK} {
+    color: rgba(255, 255, 255, 0.8);
+  }
 `;
 
 export const ProgressBar = styled.div`
   height: 6px;
-  background: rgba(255, 255, 255, 0.2);
+  background: #e5e7eb;
   border-radius: 3px;
   overflow: hidden;
+
+  ${DARK} {
+    background: rgba(255, 255, 255, 0.15);
+  }
 `;
 
 export const ProgressFill = styled.div`

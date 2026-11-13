@@ -16,23 +16,16 @@ export const MessagingContainer = styled.div`
   height: calc(100vh - 80px); /* Account for header */
   width: 100%;
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  
-  margin: 0 auto; /* Center horizontally */
+
+  margin: 0 auto;
   padding: 20px;
   max-width: calc(100vw - 240px); /* Account for sidebar */
   box-sizing: border-box;
-  
+
   @media (min-width: 1024px) {
     display: grid;
     grid-template-columns: 1fr 320px;
     max-width: calc(100vw - 240px);
-  }
-
-  
-  /* Message bubbles and content use context-aware colors */
-  &&.messaging-root .message-bubble-content,
-  &&.messaging-root .message-bubble-text {
-    color: inherit !important;
   }
 
   &&.messaging-root input::placeholder,
@@ -61,21 +54,34 @@ export const MessagingContainer = styled.div`
     opacity: 1 !important;
   }
 
-  @media (max-width: 768px) {
-    height: calc(90vh - 100px );
-    margin: 10px 0;
-    margin-left: -25px;
-    margin-right: -10px;
-    padding: 10px;
-    max-width: calc(100vw - 60px);
+  /* Couleurs de texte des bulles (écrasent les règles globales) */
+  &&.messaging-root .msg-text-light,
+  &&.messaging-root .msg-text-light * {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
   }
-`; 
+
+  &&.messaging-root .msg-text-dark,
+  &&.messaging-root .msg-text-dark * {
+    color: #111111 !important;
+    -webkit-text-fill-color: #111111 !important;
+  }
+
+  @media (max-width: 768px) {
+    height: calc(100dvh - 140px);
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 8px;
+  }
+`;
 
 /* CHAT CONTAINER - PROFESSIONAL */
 export const ChatContainer = styled.div`
   background: linear-gradient(#1a1f2e);
   height: 100%;
   width: 100%;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   border-radius: 16px;
@@ -89,8 +95,12 @@ export const ChatContainer = styled.div`
 export const ChatHeader = styled.div`
   padding: 1.5rem;
   background: linear-gradient(135deg, #2d5a3d 50%, #8b0000 100%);
-  color: var(--client-text, #111111);
+  color: #ffffff;
   border-bottom: 1px solid rgba(255,255,255,0.1);
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
 `;
 
 export const ChatTitle = styled.h2`
@@ -100,6 +110,10 @@ export const ChatTitle = styled.h2`
   display: flex;
   align-items: center;
   gap: 0.75rem;
+
+  @media (max-width: 768px) {
+    font-size: 1.25rem;
+  }
 `;
 
 export const ChatSubtitle = styled.p`
@@ -111,13 +125,14 @@ export const ChatSubtitle = styled.p`
 /* MESSAGES AREA - DASHBOARD THEME */
 export const MessagesContainer = styled.div`
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 2rem 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
   background: ${props => props.isDarkMode ? 'rgba(45, 45, 45, 0.95)' : 'rgba(255, 255, 255, 0.95)'};
-  background-image: ${props => props.isDarkMode 
+  background-image: ${props => props.isDarkMode
     ? 'radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.02) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(118, 75, 162, 0.02) 0%, transparent 50%), radial-gradient(circle at 40% 40%, rgba(102, 126, 234, 0.01) 0%, transparent 50%)'
     : 'radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.05) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(118, 75, 162, 0.05) 0%, transparent 50%), radial-gradient(circle at 40% 40%, rgba(102, 126, 234, 0.03) 0%, transparent 50%)'};
   scroll-behavior: smooth;
@@ -134,29 +149,29 @@ export const MessagesContainer = styled.div`
   &::-webkit-scrollbar-thumb {
     background: ${props => props.isDarkMode ? 'rgba(102, 126, 234, 0.4)' : 'rgba(102, 126, 234, 0.3)'};
     border-radius: 4px;
-    
+
     &:hover {
       background: ${props => props.isDarkMode ? 'rgba(102, 126, 234, 0.6)' : 'rgba(102, 126, 234, 0.5)'};
     }
   }
-  
+
   @media (max-width: 768px) {
-    padding: 1.5rem 1rem;
+    padding: 1rem 0.75rem;
     gap: 0.75rem;
   }
-  
+
   @media (max-width: 480px) {
-    padding: 1rem 0.75rem;
+    padding: 0.75rem 0.5rem;
     gap: 0.5rem;
-    
+
     &::-webkit-scrollbar {
       width: 6px;
     }
-    
+
     &::-webkit-scrollbar-track {
       border-radius: 3px;
     }
-    
+
     &::-webkit-scrollbar-thumb {
       border-radius: 3px;
     }
@@ -166,9 +181,11 @@ export const MessagesContainer = styled.div`
 /* MESSAGE ROW */
 export const MessageItem = styled.div`
   display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+  width: 100%;
   justify-content: ${props => props.isOwn ? 'flex-end' : 'flex-start'};
   animation: ${slideIn} 0.3s ease;
-  max-width: 80%;
 `;
 
 /* MESSAGE BUBBLE */
@@ -177,34 +194,40 @@ export const MessageBubble = styled.div`
   font-size: 0.95rem;
   line-height: 1.5;
   word-wrap: break-word;
+  overflow-wrap: anywhere;
   position: relative;
-  
-  background: ${props => props.isOwn 
-    ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+  max-width: calc(100% - 28px);
+  min-width: 0;
+
+  background: ${props => props.isOwn
+    ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
     : props.isDarkMode ? '#3a3a3a' : '#ffffff'};
-  color: ${props => props.isOwn 
-    ? '#ffffff' 
+  color: ${props => props.isOwn
+    ? '#ffffff'
     : props.isDarkMode ? '#ffffff' : '#111111'};
-  
-  border-radius: ${props => props.isOwn 
-    ? '1.25rem 1.25rem 0.25rem 1.25rem' 
+
+  border-radius: ${props => props.isOwn
+    ? '1.25rem 1.25rem 0.25rem 1.25rem'
     : '1.25rem 1.25rem 1.25rem 0.25rem'};
-  
+
   box-shadow: ${props => props.isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.1)'};
-  border: 1px solid ${props => props.isOwn 
-    ? 'rgba(255,255,255,0.1)' 
+  border: 1px solid ${props => props.isOwn
+    ? 'rgba(255,255,255,0.1)'
     : props.isDarkMode ? 'rgba(255,255,255,0.1)' : '#e9ecef'};
+
+  @media (max-width: 768px) {
+    padding: 0.7rem 0.9rem;
+    font-size: 0.9rem;
+  }
 `;
 
 /* MESSAGE STATUS */
 export const MessageStatus = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  margin-top: 0.5rem;
+  flex-shrink: 0;
   font-size: 0.75rem;
   opacity: 0.8;
-  justify-content: ${props => props.isOwn ? 'flex-end' : 'flex-start'};
 `;
 
 /* INPUT AREA - DASHBOARD THEME */
@@ -213,23 +236,34 @@ export const MessageInputContainer = styled.div`
   background: ${props => props.isDarkMode ? 'rgba(45, 45, 45, 0.98)' : 'rgba(255, 255, 255, 0.98)'};
   border-top: 1px solid ${props => props.isDarkMode ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.2)'};
   backdrop-filter: blur(10px);
+
+  @media (max-width: 768px) {
+    padding: 0.75rem;
+  }
 `;
 
 export const MessageInputForm = styled.form`
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
   width: 100%;
-  min-height: 60px;
+  min-height: 0;
+
+  @media (min-width: 769px) {
+    gap: 1rem;
+    min-height: 60px;
+  }
 `;
 
 export const MessageInput = styled.input`
   flex: 1;
-  padding: 1rem 1.25rem;
+  min-width: 0;
+  width: 100%;
+  padding: 0.75rem 1rem;
   border-radius: 25px;
   border: 2px solid ${props => props.isDarkMode ? 'rgba(102, 126, 234, 0.4)' : 'rgba(102, 126, 234, 0.3)'};
   outline: none;
-  background: ${props => props.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.9)'};
+  background: #ffffff;
   color: #111111 !important;
   font-size: 0.95rem;
   font-family: inherit;
@@ -238,7 +272,7 @@ export const MessageInput = styled.input`
 
   &:focus {
     border-color: #667eea;
-    background: ${props => props.isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 1)'};
+    background: #ffffff;
     box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
     transform: translateY(-1px);
   }
@@ -291,6 +325,11 @@ export const SendButton = styled.button`
     background: #999999;
     border-color: #666666;
   }
+
+  @media (max-width: 768px) {
+    width: 42px;
+    height: 42px;
+  }
 `;
 
 export const AttachButton = styled.button`
@@ -305,6 +344,7 @@ export const AttachButton = styled.button`
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  flex-shrink: 0;
   z-index: 5;
 
   /* Keep the attachment icon black in both themes. */
@@ -331,6 +371,11 @@ export const AttachButton = styled.button`
     cursor: not-allowed;
     background: #999999;
     border-color: #666666;
+  }
+
+  @media (max-width: 768px) {
+    width: 42px;
+    height: 42px;
   }
 `;
 
@@ -376,7 +421,7 @@ export const ContactInfoContainer = styled.div`
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255,255,255,0.2);
   margin-left: 20px;
-  
+
   @media (max-width: 1023px) {
     display: none;
   }
@@ -402,7 +447,7 @@ export const ContactBody = styled.div`
 
 export const ContactSection = styled.div`
   margin-bottom: 2rem;
-  
+
   &:last-child {
     margin-bottom: 0;
   }
@@ -422,7 +467,7 @@ export const ContactItem = styled.div`
   align-items: flex-start;
   gap: 1rem;
   margin-bottom: 1.5rem;
-  
+
   &:last-child {
     margin-bottom: 0;
   }
@@ -509,12 +554,18 @@ export const FileAttachment = styled.div`
   font-size: 0.875rem;
   margin-bottom: 1rem;
   box-shadow: 0 2px 8px rgba(79, 172, 254, 0.2);
+
+  @media (max-width: 768px) {
+    padding: 0.6rem 0.8rem;
+  }
 `;
 
 export const FileAttachmentInfo = styled.div`
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 `;
 
 export const FileAttachmentRemove = styled.button`
@@ -529,6 +580,7 @@ export const FileAttachmentRemove = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   transition: all 0.2s ease;
 
   &:hover {
@@ -554,7 +606,7 @@ export const LoadingSpinner = styled.div`
   border-top: 4px solid #667eea;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  
+
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -569,11 +621,11 @@ export const MobileDarkModeContainer = styled.div`
   backdrop-filter: blur(10px);
   align-items: center;
   justify-content: space-between;
-  
+
   @media (max-width: 1023px) {
     display: flex;
   }
-  
+
   @media (max-width: 480px) {
     padding: 0.75rem;
   }
@@ -586,7 +638,7 @@ export const MobileDarkModeLabel = styled.div`
   color: ${props => props.isDarkMode ? 'var(--client-text, #111111)' : '#111111'};
   font-size: 0.875rem;
   font-weight: 500;
-  
+
   @media (max-width: 480px) {
     font-size: 0.75rem;
     gap: 0.375rem;
@@ -602,11 +654,11 @@ export const MobileDarkModeToggle = styled.button`
   position: relative;
   cursor: pointer;
   transition: background 0.3s ease;
-  
+
   &:hover {
     background: ${props => props.isDarkMode ? '#764ba2' : '#999'};
   }
-  
+
   @media (max-width: 480px) {
     width: 40px;
     height: 22px;
@@ -624,7 +676,7 @@ export const MobileDarkModeToggleThumb = styled.div`
   border-radius: 50%;
   transition: left 0.3s ease;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  
+
   @media (max-width: 480px) {
     top: 2px;
     left: ${props => props.isDarkMode ? '19px' : '2px'};

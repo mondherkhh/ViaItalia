@@ -9,12 +9,6 @@ const TEXT = (C && C.text) || "#1B2B22";
 const GREEN = (C && C.green) || "#047857";
 const CARD = (C && C.card) || "#F4F6F3";
 
-const labelStyle = {
-  fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em",
-  color: MUTED, fontWeight: 700, marginBottom: 4, whiteSpace: "nowrap",
-};
-const valueStyle = { fontSize: 15, color: TEXT, fontWeight: 500, minWidth: 0, overflowWrap: "anywhere" };
-
 const toDateInput = (v) => {
   if (!v) return "";
   const d = new Date(v);
@@ -26,9 +20,9 @@ const fmt = (done, total) =>
 
 function Field({ label, children }) {
   return (
-    <div style={{ minWidth: 0 }}>
-      <div style={labelStyle}>{label}</div>
-      <div style={valueStyle}>{children}</div>
+    <div className="pf-field">
+      <div className="pf-label">{label}</div>
+      <div className="pf-value">{children}</div>
     </div>
   );
 }
@@ -39,37 +33,34 @@ function DateValue({ value, danger }) {
   return (
     <input
       type="date" value={v} readOnly
-      style={{ border: "none", background: "transparent", font: "inherit", padding: 0, width: "100%",
-        color: danger ? "#DC2626" : TEXT, outline: "none" }}
+      style={{ border: "none", background: "transparent", font: "inherit", padding: 0,
+        width: "100%", minWidth: 0, color: danger ? "#DC2626" : TEXT, outline: "none" }}
     />
   );
 }
 
 function Card({ icon, title, subtitle, children }) {
   return (
-    <div className="pf-card" style={{ position: "relative", boxSizing: "border-box", width: "100%",
-      background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 20,
-      boxShadow: "0 1px 2px rgba(0,0,0,.04)", overflow: "hidden" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: "#E3F1E8", color: GREEN,
-          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{icon}</div>
+    <section className="pf-card pf-panel">
+      <div className="pf-head">
+        <div className="pf-icon" style={{ background: "#E3F1E8", color: GREEN }}>{icon}</div>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 16, color: TEXT, whiteSpace: "nowrap" }}>{title}</div>
-          <div style={{ fontSize: 13, color: MUTED }}>{subtitle}</div>
+          <div className="pf-title">{title}</div>
+          <div className="pf-sub">{subtitle}</div>
         </div>
       </div>
-      <div style={{ borderTop: `1px solid ${BORDER}`, margin: "14px 0" }} />
-      <div style={{ minWidth: 0 }}>{children}</div>
-    </div>
+      <div className="pf-sep" />
+      {children}
+    </section>
   );
 }
 
 function LangChip({ code, checked }) {
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, border: `1px solid ${BORDER}`,
-      borderRadius: 999, padding: "3px 10px", fontSize: 13, background: "#fff", color: TEXT }}>
-      <span style={{ width: 16, height: 16, borderRadius: 4, border: `1px solid ${checked ? GREEN : "#C9D2C9"}`,
-        background: checked ? GREEN : "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+    <span className="pf-chip">
+      <span style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0,
+        border: `1px solid ${checked ? GREEN : "#C9D2C9"}`, background: checked ? GREEN : "#fff",
+        display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
         {checked ? <FaCheck size={9} color="#fff" /> : null}
       </span>
       {code}
@@ -105,132 +96,169 @@ export default function ProfileTab({
     [FiFileText, userObj.passport],
   ].filter(([, v]) => v);
 
-  const statBox = { background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.18)",
-    borderRadius: 12, padding: "10px 4px", textAlign: "center" };
-  const pill = { fontSize: 12, padding: "3px 10px", borderRadius: 999, border: "1px solid rgba(255,255,255,.25)",
-    background: "rgba(255,255,255,.08)", color: "#fff", whiteSpace: "nowrap" };
-
   return (
-    <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap", width: "100%", minWidth: 0, boxSizing: "border-box" }}>
+    <div className="pf-wrap">
       <style>{`
-        .pf-card { display: block !important; float: none !important; position: relative !important; }
-        .pf-card::before, .pf-card::after { content: none !important; display: none !important; }
-        .pf-card > * { max-width: 100% !important; box-sizing: border-box !important; }
+        /* Le composant s'adapte à la largeur de SON conteneur (pas à l'écran) */
+        .pf-wrap { container-type: inline-size; container-name: pf; width: 100%; min-width: 0; box-sizing: border-box; }
+        .pf-wrap *, .pf-wrap *::before, .pf-wrap *::after { box-sizing: border-box; }
+
+        .pf-root { display: grid; gap: clamp(12px, 3cqi, 20px); grid-template-columns: minmax(0, 1fr); align-items: start; }
+        @container pf (min-width: 760px) {
+          .pf-root { grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr); }
+        }
+        .pf-col { display: flex; flex-direction: column; gap: clamp(12px, 3cqi, 16px); min-width: 0; }
+
+        /* Grilles automatiques : le nombre de colonnes dépend de la place disponible */
+        .pf-grid { display: grid; gap: 14px 18px;
+          grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); }
+
+        .pf-panel { width: 100%; background: ${CARD}; border: 1px solid ${BORDER}; border-radius: 16px;
+          padding: clamp(14px, 4cqi, 20px); box-shadow: 0 1px 2px rgba(0,0,0,.04); min-width: 0; overflow: hidden; }
+        .pf-head { display: flex; align-items: center; gap: 12px; }
+        .pf-icon { width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+          display: flex; align-items: center; justify-content: center; }
+        .pf-title { font-weight: 700; font-size: clamp(14px, 4cqi, 16px); color: ${TEXT}; overflow-wrap: anywhere; }
+        .pf-sub { font-size: clamp(12px, 3.4cqi, 13px); color: ${MUTED}; line-height: 1.35; }
+        .pf-sep { border-top: 1px solid ${BORDER}; margin: 14px 0; }
+
+        .pf-field { min-width: 0; }
+        .pf-label { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: ${MUTED};
+          font-weight: 700; margin-bottom: 4px; overflow-wrap: anywhere; }
+        .pf-value { font-size: clamp(14px, 4cqi, 15px); color: ${TEXT}; font-weight: 500; min-width: 0; overflow-wrap: anywhere; }
+
+        .pf-chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid ${BORDER};
+          border-radius: 999px; padding: 3px 10px; font-size: 13px; background: #fff; color: ${TEXT}; }
+
+        .pf-hero { border-radius: 20px; padding: clamp(16px, 5cqi, 24px); color: #fff; overflow: hidden;
+          width: 100%; background-color: #07201F;
+          background-image:
+            radial-gradient(circle at 20% 15%, rgba(20,90,80,.45), transparent 55%),
+            radial-gradient(circle at 85% 40%, rgba(30,110,95,.30), transparent 50%),
+            radial-gradient(circle at 40% 95%, rgba(15,70,62,.40), transparent 55%); }
+        .pf-avatar { width: clamp(72px, 22cqi, 96px); aspect-ratio: 1; border-radius: 50%; margin: 0 auto 12px;
+          background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.25);
+          display: flex; align-items: center; justify-content: center;
+          font-size: clamp(24px, 8cqi, 32px); font-weight: 800; }
+        .pf-name-row { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; text-align: center; }
+        .pf-name { font-weight: 800; font-size: clamp(18px, 6cqi, 22px); overflow-wrap: anywhere; }
+        .pf-stage { background: #fff; color: ${GREEN}; font-weight: 800; font-size: 12px;
+          padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
+        .pf-center { text-align: center; }
+        .pf-pill { font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.25);
+          background: rgba(255,255,255,.08); color: #fff; }
+
+        .pf-stats { display: grid; gap: 8px; margin-top: 16px;
+          grid-template-columns: repeat(auto-fit, minmax(min(100%, 88px), 1fr)); }
+        .pf-stat { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
+          border-radius: 12px; padding: 10px 6px; text-align: center; min-width: 0; }
+        .pf-stat-v { font-weight: 800; font-size: clamp(16px, 5cqi, 20px); }
+        .pf-stat-l { font-size: 11px; color: rgba(255,255,255,.7); line-height: 1.2; overflow-wrap: anywhere; }
+
+        .pf-contacts { border-top: 1px solid rgba(255,255,255,.15); margin-top: 16px; padding-top: 14px;
+          display: flex; flex-direction: column; gap: 10px; }
+        .pf-contact { display: flex; align-items: flex-start; gap: 10px; font-size: clamp(13px, 3.8cqi, 14px);
+          color: rgba(255,255,255,.92); min-width: 0; overflow-wrap: anywhere; }
+        .pf-contact svg { flex-shrink: 0; margin-top: 2px; }
+
+        .pf-bar { margin-top: 12px; height: 6px; background: #E4E9E4; border-radius: 999px; overflow: hidden; }
       `}</style>
 
-      {/* LEFT */}
-      <div style={{ flex: "1 1 320px", minWidth: 0 }}>
-        <div className="pf-card" style={{ position: "relative", borderRadius: 20, padding: 24, color: "#fff", overflow: "hidden",
-          backgroundColor: "#07201F",
-          backgroundImage:
-            "radial-gradient(circle at 20% 15%, rgba(20,90,80,.45), transparent 55%)," +
-            "radial-gradient(circle at 85% 40%, rgba(30,110,95,.30), transparent 50%)," +
-            "radial-gradient(circle at 40% 95%, rgba(15,70,62,.40), transparent 55%)" }}>
-          <div style={{ width: 96, height: 96, borderRadius: "50%", margin: "0 auto 12px",
-            background: "rgba(255,255,255,.10)", border: "1px solid rgba(255,255,255,.25)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 32, fontWeight: 800, color: "#fff" }}>{initials}</div>
+      <div className="pf-root">
+        {/* GAUCHE */}
+        <div className="pf-col">
+          <div className="pf-hero">
+            <div className="pf-avatar">{initials}</div>
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
-            <div style={{ fontWeight: 800, fontSize: 22, color: "#fff" }}>{fullName}</div>
-            {hasStage ? (
-              <span style={{ background: "#fff", color: GREEN, fontWeight: 800, fontSize: 12,
-                padding: "2px 10px", borderRadius: 999, whiteSpace: "nowrap" }}>{stageName}</span>
+            <div className="pf-name-row">
+              <div className="pf-name">{fullName}</div>
+              {hasStage ? <span className="pf-stage">{stageName}</span> : null}
+            </div>
+
+            {levelLine ? <div className="pf-center" style={{ marginTop: 6, color: "rgba(255,255,255,.85)" }}>{levelLine}</div> : null}
+            {academicYear ? <div className="pf-center" style={{ fontSize: 13, color: "rgba(255,255,255,.6)" }}>Academic year {academicYear}</div> : null}
+
+            {tags.length ? (
+              <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginTop: 12 }}>
+                {tags.map((t) => <span key={t} className="pf-pill">{t}</span>)}
+              </div>
+            ) : null}
+
+            <div className="pf-stats">
+              <div className="pf-stat"><div className="pf-stat-v">{fmt(foldersDone, foldersTotal)}</div><div className="pf-stat-l">Folders done</div></div>
+              <div className="pf-stat"><div className="pf-stat-v">{show(applicationsCount)}</div><div className="pf-stat-l">Applications</div></div>
+              <div className="pf-stat"><div className="pf-stat-v">{fmt(tasksDone, tasksTotal)}</div><div className="pf-stat-l">Tasks done</div></div>
+            </div>
+
+            {contactLines.length ? (
+              <div className="pf-contacts">
+                {contactLines.map(([Icon, v], i) => (
+                  <div key={i} className="pf-contact"><Icon size={15} /><span style={{ minWidth: 0 }}>{v}</span></div>
+                ))}
+              </div>
             ) : null}
           </div>
 
-          {levelLine ? <div style={{ textAlign: "center", marginTop: 6, color: "rgba(255,255,255,.85)" }}>{levelLine}</div> : null}
-          {academicYear ? <div style={{ textAlign: "center", fontSize: 13, color: "rgba(255,255,255,.6)" }}>Academic year {academicYear}</div> : null}
-
-          {tags.length ? (
-            <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginTop: 12 }}>
-              {tags.map((t) => <span key={t} style={pill}>{t}</span>)}
-            </div>
-          ) : null}
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginTop: 16 }}>
-            <div style={statBox}><div style={{ fontWeight: 800, fontSize: 20, color: "#fff" }}>{fmt(foldersDone, foldersTotal)}</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,.7)", whiteSpace: "nowrap" }}>Folders done</div></div>
-            <div style={statBox}><div style={{ fontWeight: 800, fontSize: 20, color: "#fff" }}>{show(applicationsCount)}</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,.7)", whiteSpace: "nowrap" }}>Applications</div></div>
-            <div style={statBox}><div style={{ fontWeight: 800, fontSize: 20, color: "#fff" }}>{fmt(tasksDone, tasksTotal)}</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,.7)", whiteSpace: "nowrap" }}>Tasks done</div></div>
-          </div>
-
-          {contactLines.length ? (
-            <div style={{ borderTop: "1px solid rgba(255,255,255,.15)", marginTop: 16, paddingTop: 14,
-              display: "flex", flexDirection: "column", gap: 10 }}>
-              {contactLines.map(([Icon, v], i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14,
-                  color: "rgba(255,255,255,.92)", minWidth: 0, overflowWrap: "anywhere" }}>
-                  <Icon size={15} style={{ flexShrink: 0 }} /> {v}
+          <section className="pf-card pf-panel">
+            <div className="pf-head">
+              <div className="pf-icon" style={{ background: GREEN, color: "#fff" }}><FiCreditCard size={18} /></div>
+              <div style={{ minWidth: 0 }}>
+                <div className="pf-title">Agency fee</div>
+                <div className="pf-sub">
+                  {totalFee != null
+                    ? remaining > 0
+                      ? `${collected.toLocaleString("en-US")} TND of ${totalFee.toLocaleString("en-US")} TND collected - ${remaining.toLocaleString("en-US")} TND to go`
+                      : <span style={{ color: GREEN, fontWeight: 700 }}>Fully paid</span>
+                    : `${collected.toLocaleString("en-US")} TND collected - no fee set yet`}
                 </div>
-              ))}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="pf-card" style={{ boxSizing: "border-box", width: "100%", background: CARD, border: `1px solid ${BORDER}`,
-          borderRadius: 16, padding: 20, boxShadow: "0 1px 2px rgba(0,0,0,.04)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: GREEN, color: "#fff",
-              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><FiCreditCard size={18} /></div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontWeight: 700, fontSize: 16, color: TEXT }}>Agency fee</div>
-              <div style={{ fontSize: 13, color: MUTED, lineHeight: 1.35 }}>
-                {totalFee != null
-                  ? remaining > 0
-                    ? `${collected.toLocaleString("en-US")} TND of ${totalFee.toLocaleString("en-US")} TND collected - ${remaining.toLocaleString("en-US")} TND to go`
-                    : <span style={{ color: GREEN, fontWeight: 700 }}>Fully paid</span>
-                  : `${collected.toLocaleString("en-US")} TND collected - no fee set yet`}
               </div>
             </div>
-          </div>
-          {totalFee != null ? (
-            <div style={{ marginTop: 12, height: 6, background: "#E4E9E4", borderRadius: 999, overflow: "hidden" }}>
-              <div style={{ width: `${Math.min(100, (collected / totalFee) * 100)}%`, height: "100%", background: GREEN }} />
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      {/* RIGHT */}
-      <div style={{ flex: "2 1 480px", minWidth: 0, width: "100%" }}>
-        <Card icon={<FaIdCard size={16} />} title="Legal identity" subtitle="Spelled exactly as on the passport">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "16px 20px" }}>
-            <Field label="Legal first name">{show(userObj.firstName)}</Field>
-            <Field label="Legal last name">{show(userObj.lastName)}</Field>
-            <Field label="Date of birth"><DateValue value={userObj.dob} /></Field>
-            <Field label="Birth place">{show(userObj.birthPlace)}</Field>
-            <Field label="Nationality">{show(userObj.nationality)}</Field>
-            <Field label="Gender">{show(userObj.gender)}</Field>
-          </div>
-        </Card>
-
-        <Card icon={<FaLandmark size={16} />} title="Passport" subtitle="Must stay valid past the departure date">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "16px 20px" }}>
-            <Field label="Passport number">{show(userObj.passport)}</Field>
-            <Field label="Issuing authority">{show(userObj.passportAuthority)}</Field>
-            <Field label="Issued"><DateValue value={userObj.passportIssued} /></Field>
-            <Field label="Expires"><DateValue value={userObj.passportExpires} danger={expDanger} /></Field>
-          </div>
-        </Card>
-
-        <Card icon={<FaGraduationCap size={17} />} title="Study plan" subtitle="What we are applying for">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "16px 20px" }}>
-            <Field label="Completed education">{show(userObj.completedEducation || userObj.completedCourses)}</Field>
-            <Field label="Target level">{show(targetLevel && targetLevel !== "—" ? targetLevel : null)}</Field>
-            <Field label="Field of study">{show(fieldOfStudy && fieldOfStudy !== "—" ? fieldOfStudy : userObj.fieldOfStudy)}</Field>
-            <Field label="Study languages">
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <LangChip code="ENG" checked={langs.includes("ENG")} />
-                <LangChip code="ITA" checked={langs.includes("ITA")} />
+            {totalFee != null ? (
+              <div className="pf-bar">
+                <div style={{ width: `${Math.min(100, (collected / totalFee) * 100)}%`, height: "100%", background: GREEN }} />
               </div>
-            </Field>
-            <Field label="Preferred cities">{show(userObj.cities)}</Field>
-            <Field label="Target university">{show(userObj.university)}</Field>
-          </div>
-        </Card>
+            ) : null}
+          </section>
+        </div>
+
+        {/* DROITE */}
+        <div className="pf-col">
+          <Card icon={<FaIdCard size={16} />} title="Legal identity" subtitle="Spelled exactly as on the passport">
+            <div className="pf-grid">
+              <Field label="Legal first name">{show(userObj.firstName)}</Field>
+              <Field label="Legal last name">{show(userObj.lastName)}</Field>
+              <Field label="Date of birth"><DateValue value={userObj.dob} /></Field>
+              <Field label="Birth place">{show(userObj.birthPlace)}</Field>
+              <Field label="Nationality">{show(userObj.nationality)}</Field>
+              <Field label="Gender">{show(userObj.gender)}</Field>
+            </div>
+          </Card>
+
+          <Card icon={<FaLandmark size={16} />} title="Passport" subtitle="Must stay valid past the departure date">
+            <div className="pf-grid">
+              <Field label="Passport number">{show(userObj.passport)}</Field>
+              <Field label="Issuing authority">{show(userObj.passportAuthority)}</Field>
+              <Field label="Issued"><DateValue value={userObj.passportIssued} /></Field>
+              <Field label="Expires"><DateValue value={userObj.passportExpires} danger={expDanger} /></Field>
+            </div>
+          </Card>
+
+          <Card icon={<FaGraduationCap size={17} />} title="Study plan" subtitle="What we are applying for">
+            <div className="pf-grid">
+              <Field label="Completed education">{show(userObj.completedEducation || userObj.completedCourses)}</Field>
+              <Field label="Target level">{show(targetLevel && targetLevel !== "—" ? targetLevel : null)}</Field>
+              <Field label="Field of study">{show(fieldOfStudy && fieldOfStudy !== "—" ? fieldOfStudy : userObj.fieldOfStudy)}</Field>
+              <Field label="Study languages">
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <LangChip code="ENG" checked={langs.includes("ENG")} />
+                  <LangChip code="ITA" checked={langs.includes("ITA")} />
+                </div>
+              </Field>
+              <Field label="Preferred cities">{show(userObj.cities)}</Field>
+              <Field label="Target university">{show(userObj.university)}</Field>
+            </div>
+          </Card>
+        </div>
       </div>
     </div>
   );

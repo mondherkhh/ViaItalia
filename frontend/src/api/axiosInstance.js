@@ -1,26 +1,27 @@
 import axios from "axios";
 
+// Adresse de l'API : lien Cloudflare en production (variable Vercel),
+// localhost seulement en développement sur ton PC.
+const API_URL = (process.env.REACT_APP_API_URL || "http://localhost:5000").replace(/\/+$/, "");
+
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:5000/api", // your backend URL
+  baseURL: `${API_URL}/api`,
   timeout: 10000,
 });
 
-// Add request interceptor to include auth token
+// Ajoute le token d'authentification à chaque requête
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-export default axiosInstance;
-
+// Redirige vers /login si le token est invalide (401)
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -35,3 +36,5 @@ axiosInstance.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export default axiosInstance;

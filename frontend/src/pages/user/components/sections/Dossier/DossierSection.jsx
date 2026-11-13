@@ -437,12 +437,17 @@ const DossierSection = () => {
 
   const inProgColor = light ? '#d97706' : '#17A05D';
 
+  // Contraintes de largeur communes (light + dark) : le contenu ne dépasse jamais de l'écran
+  const fitWidth = { width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' };
+
   return (
-    // ⬇ MODIF : paddingTop: 0 pour supprimer l'espace au-dessus du titre
-    <DossierOverviewContainer style={{ ...themeVars, paddingTop: 0 }}>
-      <DossierContainer style={{ paddingTop: 0, marginTop: 0 }}>
+    <DossierOverviewContainer
+      style={{ ...themeVars, ...(isMobile ? fitWidth : {}), paddingTop: 0, overflowX: isMobile ? 'clip' : undefined }}
+    >
+      <DossierContainer
+        style={{ ...(isMobile ? fitWidth : {}), paddingTop: 0, marginTop: 0 }}
+      >
         {/* Header Section */}
-        {/* ⬇ MODIF : margin/padding/minHeight réduits */}
         <HeaderSection style={{ margin: 0, padding: '0.5rem 0 0', minHeight: 'auto' }}>
           <div style={{ textAlign: 'center' }}>
             <DossierTitle style={{ marginTop: 0 }}>Mon Dossier Administratif</DossierTitle>
@@ -454,13 +459,13 @@ const DossierSection = () => {
 
         {isMobile ? (
           /* ───────── Affichage téléphone : liste de dossiers ───────── */
-          <section style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <section style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 12, ...fitWidth }}>
             <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: 'none' }} onChange={handleFileChange} />
 
             {neededFolders.length > 0 && (
-              <div style={{ background: 'var(--d-warn-bg)', borderRadius: 14, padding: '14px 16px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <div style={{ background: 'var(--d-warn-bg)', borderRadius: 14, padding: '14px 16px', display: 'flex', gap: 10, alignItems: 'flex-start', ...fitWidth }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--d-warn-text)', marginTop: 6, flexShrink: 0 }} />
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--d-warn-text)', lineHeight: 1.35 }}>
                     Votre conseiller a besoin de documents dans {neededFolders.join(', ')}
                   </div>
@@ -491,6 +496,7 @@ const DossierSection = () => {
                     borderRadius: 16,
                     padding: '14px 16px',
                     boxShadow: 'var(--d-shadow)',
+                    ...fitWidth,
                   }}
                 >
                   <div
@@ -696,9 +702,13 @@ const DossierSection = () => {
           </div>
         )}
 
-        {/* Progress Card */}
-        <MainCard style={light ? { background: 'transparent', border: 'none', boxShadow: 'none', backdropFilter: 'none', padding: 0 } : undefined}>
-          <div style={{ padding: '2rem', background: 'var(--d-card)', border: '1px solid var(--d-border)', ...accentTop('--d-amber'), borderRadius: '16px', boxShadow: 'var(--d-shadow)' }}>
+        {/* Progress Card : mobile (light + dark) = pas de double cadre */}
+        <MainCard
+          style={(light || isMobile)
+            ? { background: 'transparent', border: 'none', boxShadow: 'none', backdropFilter: 'none', padding: 0, ...(isMobile ? fitWidth : {}) }
+            : undefined}
+        >
+          <div style={{ padding: isMobile ? '1.25rem 1rem' : '2rem', background: 'var(--d-card)', border: '1px solid var(--d-border)', ...accentTop('--d-amber'), borderRadius: '16px', boxShadow: 'var(--d-shadow)', ...(isMobile ? fitWidth : {}) }}>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--d-text)', textAlign: 'left', marginBottom: '0.25rem' }}>
               Progression du dossier
             </h2>
@@ -716,7 +726,7 @@ const DossierSection = () => {
                 const isUpcoming = !completed && !inProgress;
                 const StepIconComp = step.icon;
                 return (
-                  <div key={step.id} style={{ textAlign: 'center', zIndex: 1, flex: 1, position: 'relative' }}>
+                  <div key={step.id} style={{ textAlign: 'center', zIndex: 1, flex: 1, minWidth: 0, position: 'relative' }}>
                     <div
                       style={{
                         width: 48,

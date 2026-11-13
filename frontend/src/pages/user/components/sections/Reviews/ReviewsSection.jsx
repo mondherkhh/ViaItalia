@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import reviewService from "../../../../../api/reviewService";
+
 const STAR_LABELS = [
   "Très insatisfait",
   "Insatisfait",
@@ -7,6 +8,25 @@ const STAR_LABELS = [
   "Satisfait",
   "Très satisfait",
 ];
+
+/* Styles responsive (les styles inline ne gèrent pas les media queries) */
+const RESPONSIVE_CSS = `
+.rv-root{width:100%;max-width:720px;min-width:0;margin:0 auto;padding:.5rem 0 1rem;box-sizing:border-box}
+.rv-root *{box-sizing:border-box}
+.rv-form{width:100%;max-width:100%;border-radius:16px;padding:1.5rem 1.25rem}
+.rv-stars{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;margin-bottom:14px}
+.rv-star{background:none;border:none;cursor:pointer;padding:4px;width:48px;height:48px;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center}
+.rv-textarea{display:block;width:100%;max-width:100%;padding:12px;border-radius:10px;font-size:16px;font-family:inherit;resize:vertical;margin-bottom:6px;line-height:1.45}
+.rv-submit{padding:10px 22px;border-radius:20px;border:none;color:#fff;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:15px}
+.rv-text{overflow-wrap:anywhere;word-break:break-word}
+@media (max-width:600px){
+  .rv-form{padding:1rem}
+  .rv-stars{justify-content:space-between;gap:2px}
+  .rv-star{width:calc((100% - 8px)/5);max-width:52px;height:44px}
+  .rv-submit{width:100%}
+}
+`;
+
 function StarIcon({ filled, size = 36 }) {
   return (
     <svg
@@ -20,6 +40,7 @@ function StarIcon({ filled, size = 36 }) {
       strokeLinejoin="round"
       style={{
         display: "inline-block",
+        maxWidth: "100%",
         transition: "transform 150ms ease,fill 150ms ease",
       }}
       aria-hidden="true"
@@ -28,6 +49,7 @@ function StarIcon({ filled, size = 36 }) {
     </svg>
   );
 }
+
 function SendIcon({ size = 18 }) {
   return (
     <svg
@@ -47,6 +69,11 @@ function SendIcon({ size = 18 }) {
     </svg>
   );
 }
+
+const readIsDark = () =>
+  typeof document !== "undefined" &&
+  document.body.classList.contains("theme-dark");
+
 export default function ReviewsSection() {
   const [rating, setRating] = useState(0),
     [hoverRating, setHoverRating] = useState(0),
@@ -55,7 +82,21 @@ export default function ReviewsSection() {
     [myReviews, setMyReviews] = useState([]),
     [retryKey, setRetryKey] = useState(0),
     [loading, setLoading] = useState(false),
-    [errorMsg, setErrorMsg] = useState("");
+    [errorMsg, setErrorMsg] = useState(""),
+    [isDark, setIsDark] = useState(readIsDark);
+
+  // Le thème se met à jour dès que l'utilisateur clique sur soleil/lune
+  useEffect(() => {
+    const update = () => setIsDark(readIsDark());
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     reviewService
       .listMine()
@@ -65,9 +106,11 @@ export default function ReviewsSection() {
         setMyReviews([]);
       });
   }, [retryKey]);
+
   const handleRetry = () => setRetryKey((k) => k + 1);
   const effective = hoverRating || rating;
   const labelNote = effective === 0 ? "" : STAR_LABELS[effective - 1];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!effective || effective < 1) {
@@ -100,42 +143,21 @@ export default function ReviewsSection() {
     }
     setLoading(false);
   };
-  const isDark =
-    typeof document !== "undefined" &&
-    document.body.classList.contains("theme-dark");
+
   const cardBg = isDark ? "#071523" : "#fff",
     textColor = isDark ? "#f3f4f6" : "#111827",
-    sub = isDark ? "#9ca3af" : "#6b7280";
+    sub = isDark ? "#9ca3af" : "#6b7280",
+    border = isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e5e7eb";
+  const submitDisabled = loading || !effective || content.trim().length < 10;
+
   return (
-    <div
-      style={{
-        color: textColor,
-        padding: "1rem 0",
-        maxWidth: 720,
-        margin: "0 auto",
-      }}
-    >
-      <h2
-        style={{
-          fontSize: 22,
-          fontWeight: 800,
-          marginBottom: 16,
-          letterSpacing: -0.5,
-        }}
-      >
-        Donner mon avis
-      </h2>
+    <div className="rv-root" style={{ color: textColor }}>
+      <style>{RESPONSIVE_CSS}</style>
+
       <form
+        className="rv-form"
         onSubmit={handleSubmit}
-        style={{
-          background: cardBg,
-          border: isDark
-            ? "1px solid rgba(255,255,255,0.08)"
-            : "1px solid #e5e7eb",
-          borderRadius: 16,
-          padding: "1.5rem 1.25rem",
-          maxWidth: 720,
-        }}
+        style={{ background: cardBg, border }}
       >
         <label
           style={{
@@ -144,22 +166,15 @@ export default function ReviewsSection() {
             marginBottom: 8,
             fontSize: 15,
           }}
-          /* aria-required retiré */
         >
           Note
         </label>
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            marginBottom: 14,
-            alignItems: "center",
-          }}
-        >
+        <div className="rv-stars" role="radiogroup" aria-label="Note">
           {[1, 2, 3, 4, 5].map((s) => (
             <button
               key={s}
               type="button"
+              className="rv-star"
               aria-label={`${s} étoile`}
               role="radio"
               aria-checked={rating === s}
@@ -169,21 +184,12 @@ export default function ReviewsSection() {
               }}
               onMouseEnter={() => setHoverRating(s)}
               onMouseLeave={() => setHoverRating(0)}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: 6,
-                width: 48,
-                height: 48,
-                position: "relative",
-                transition: "transform 150ms ease",
-              }}
             >
-              <StarIcon filled={(hoverRating || rating) >= s} size={36} />
+              <StarIcon filled={(hoverRating || rating) >= s} size={34} />
             </button>
           ))}
         </div>
+
         {labelNote !== "" && (
           <div
             style={{
@@ -197,6 +203,7 @@ export default function ReviewsSection() {
             {labelNote}
           </div>
         )}
+
         <label
           style={{
             display: "block",
@@ -208,6 +215,7 @@ export default function ReviewsSection() {
           Commentaire
         </label>
         <textarea
+          className="rv-textarea"
           value={content}
           onChange={(e) => {
             setContent(e.target.value);
@@ -217,18 +225,11 @@ export default function ReviewsSection() {
           placeholder="Partagez votre expérience..."
           maxLength={1000}
           style={{
-            width: "100%",
-            padding: 12,
-            borderRadius: 10,
             border: isDark
               ? "1px solid rgba(255,255,255,0.12)"
               : "1px solid #d1d5db",
-            fontSize: 15,
-            resize: "vertical",
-            marginBottom: 6,
             color: textColor,
             background: isDark ? "#0b1221" : "#fff",
-            lineHeight: 1.45,
           }}
         />
         <div
@@ -241,32 +242,20 @@ export default function ReviewsSection() {
         >
           {content.trim().length} / 1000
         </div>
+
         <button
           type="submit"
-          disabled={loading || !effective || content.trim().length < 10}
+          className="rv-submit"
+          disabled={submitDisabled}
           style={{
-            padding: "10px 22px",
-            borderRadius: 20,
-            border: "none",
-            background:
-              loading || !effective || content.trim().length < 10
-                ? "#9ca3af"
-                : "#138a5b",
-            color: "#fff",
-            fontWeight: 700,
-            cursor:
-              loading || !effective || content.trim().length < 10
-                ? "not-allowed"
-                : "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            fontSize: 15,
+            background: submitDisabled ? "#9ca3af" : "#138a5b",
+            cursor: submitDisabled ? "not-allowed" : "pointer",
             transition: "opacity .15s",
           }}
         >
           <SendIcon size={18} /> {loading ? "Envoi..." : "Envoyer mon avis"}
         </button>
+
         {errorMsg && (
           <div
             style={{
@@ -292,6 +281,7 @@ export default function ReviewsSection() {
           </div>
         )}
       </form>
+
       <div style={{ marginTop: 28 }}>
         <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>
           Mes avis
@@ -304,20 +294,19 @@ export default function ReviewsSection() {
             key={r.id}
             style={{
               background: cardBg,
-              border: isDark
-                ? "1px solid rgba(255,255,255,0.08)"
-                : "1px solid #e5e7eb",
+              border,
               borderRadius: 12,
               padding: 14,
               marginBottom: 10,
             }}
           >
-            <div style={{ display: "flex", gap: 4, fontSize: 18 }}>
+            <div style={{ display: "flex", gap: 4 }}>
               {Array.from({ length: 5 }).map((_, i) => (
                 <StarIcon key={i} filled={i < (r.rating || 0)} size={18} />
               ))}
             </div>
             <div
+              className="rv-text"
               style={{
                 color: textColor,
                 fontSize: 15,
