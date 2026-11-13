@@ -11,6 +11,7 @@ const HeaderPanel = styled.div`
   padding: .85rem 1.25rem;
   box-shadow: 0 8px 30px rgba(0,0,0,0.05);
   margin-bottom: 1.25rem;
+<<<<<<< HEAD
   flex-wrap: nowrap;
   min-width: 0;
 
@@ -18,12 +19,24 @@ const HeaderPanel = styled.div`
   @media (max-width: 700px) {
     flex-wrap: nowrap; flex-direction: row; align-items: center; gap: .5rem;
     padding: .6rem .7rem; border-radius: 18px; margin-bottom: 1rem;
+=======
+  flex-wrap: wrap;
+  min-width: 0;
+  @media (max-width: 700px) {
+    flex-direction: column; align-items: stretch; gap: .7rem;
+    padding: .75rem; border-radius: 16px; margin-bottom: 1rem;
+>>>>>>> 2504b50754501d134c6cb9e2cf8b05e4be794ff6
   }
 `;
 
 const Left = styled.div`
+<<<<<<< HEAD
   display: flex; align-items: center; gap: 1rem; min-width: 0; flex: 1 1 auto;
   @media (max-width: 700px) { gap: .65rem; }
+=======
+  display: flex; align-items: center; gap: 1rem; min-width: 0;
+  @media (max-width: 700px) { gap: .7rem; }
+>>>>>>> 2504b50754501d134c6cb9e2cf8b05e4be794ff6
 `;
 const TitleArea = styled.div` min-width: 0; flex: 1; `;
 const Title = styled.h1`
@@ -32,6 +45,7 @@ const Title = styled.h1`
 `;
 const Subtitle = styled.div`
   font-size: .78rem; color: var(--adm-muted); margin-top: .15rem;
+<<<<<<< HEAD
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   @media (max-width: 700px) { font-size: .72rem; }
 `;
@@ -47,6 +61,20 @@ const Right = styled.div`
 const SearchBox = styled.div`
   position: relative; flex: 0 1 260px; width: 260px; min-width: 120px;
   @media (max-width: 700px) { display: none; }
+=======
+  @media (max-width: 700px) {
+    font-size: .72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+`;
+
+const Right = styled.div`
+  display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; min-width: 0;
+  @media (max-width: 700px) { flex-wrap: nowrap; gap: .45rem; width: 100%; }
+`;
+const SearchBox = styled.div`
+  position: relative; flex: 0 1 260px; min-width: 0;
+  @media (max-width: 700px) { flex: 1 1 0; }
+>>>>>>> 2504b50754501d134c6cb9e2cf8b05e4be794ff6
 `;
 const SearchInput = styled.input`
   width: 100%; padding: .45rem .8rem .45rem 2.2rem; border-radius: 999px;
@@ -61,6 +89,7 @@ const IconBtn = styled.button`
   border: 1px solid var(--adm-border); background: var(--adm-surface); color: var(--adm-text);
   display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s ease;
   &:hover { background: var(--adm-accent-soft); color: var(--adm-accent); border-color: var(--adm-accent-soft); }
+<<<<<<< HEAD
   @media (max-width: 380px) { width: 34px; height: 34px; border-radius: 9px; }
 `;
 
@@ -76,6 +105,8 @@ const MenuBtn = styled(IconBtn)`
     width: 46px; height: 46px; border-radius: 14px;
     background: var(--adm-panel); box-shadow: 0 2px 8px rgba(0,0,0,.08);
   }
+=======
+>>>>>>> 2504b50754501d134c6cb9e2cf8b05e4be794ff6
 `;
 
 const InviteBtn = styled.button`
@@ -86,8 +117,12 @@ const InviteBtn = styled.button`
   display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
   &:hover:not(:disabled) { background: #095f30; }
   &:disabled { opacity: .55; cursor: not-allowed; }
+<<<<<<< HEAD
   @media (max-width: 700px) { padding: 0; width: 38px; border-radius: 10px; }
   @media (max-width: 380px) { width: 34px; height: 34px; }
+=======
+  @media (max-width: 700px) { padding: 0; width: 38px; }
+>>>>>>> 2504b50754501d134c6cb9e2cf8b05e4be794ff6
 `;
 
 const InviteLabel = styled.span`
